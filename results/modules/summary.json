@@ -1,0 +1,132 @@
+{
+  "collectedAt": "2026-10-15T07:50:04.291Z",
+  "source": {
+    "package": "@nuxt/modules",
+    "version": "0.6.0-8d66ee",
+    "published": "2026-10-14T20:48:46.399Z"
+  },
+  "criteria": {
+    "description": "Nuxt 4 を宣言範囲に含む・npm 最新版が deprecated でない・Nuxt 4.0.0 公開日以降に npm で更新",
+    "nuxt4ReleasedAt": "2025-07-15T22:17:36.055Z"
+  },
+  "listed": {
+    "total": 433,
+    "byType": {
+      "3rd-party": 378,
+      "community": 44,
+      "official": 11
+    },
+    "excluded": {
+      "noNuxt4": 94,
+      "deprecated": 1,
+      "notUpdatedSinceNuxt4": 61
+    }
+  },
+  "usable": {
+    "total": 277,
+    "byGroup": {
+      "3rd-party": 230,
+      "公式系": 47
+    },
+    "byType": {
+      "3rd-party": 230,
+      "community": 36,
+      "official": 11
+    },
+    "byCategory": {
+      "Libraries": 55,
+      "UI": 48,
+      "Extensions": 29,
+      "Security": 22,
+      "Devtools": 21,
+      "CMS": 16,
+      "Database": 13,
+      "Request": 13,
+      "SEO": 12,
+      "AI": 10,
+      "Performance": 9,
+      "Analytics": 8,
+      "Images": 5,
+      "Monitoring": 4,
+      "Ecommerce": 3,
+      "Payment": 3,
+      "CSS": 2,
+      "Deployment": 2,
+      "Fonts": 2
+    },
+    "byCategoryAndGroup": {
+      "Libraries": {
+        "3rd-party": 52,
+        "公式系": 3
+      },
+      "UI": {
+        "3rd-party": 44,
+        "公式系": 4
+      },
+      "Extensions": {
+        "3rd-party": 25,
+        "公式系": 4
+      },
+      "Security": {
+        "3rd-party": 18,
+        "公式系": 4
+      },
+      "Devtools": {
+        "3rd-party": 13,
+        "公式系": 8
+      },
+      "CMS": {
+        "3rd-party": 11,
+        "公式系": 5
+      },
+      "Database": {
+        "3rd-party": 12,
+        "公式系": 1
+      },
+      "Request": {
+        "3rd-party": 12,
+        "公式系": 1
+      },
+      "SEO": {
+        "3rd-party": 9,
+        "公式系": 3
+      },
+      "AI": {
+        "3rd-party": 8,
+        "公式系": 2
+      },
+      "Performance": {
+        "3rd-party": 5,
+        "公式系": 4
+      },
+      "Analytics": {
+        "3rd-party": 6,
+        "公式系": 2
+      },
+      "Images": {
+        "3rd-party": 4,
+        "公式系": 1
+      },
+      "Monitoring": {
+        "3rd-party": 4
+      },
+      "Ecommerce": {
+        "公式系": 2,
+        "3rd-party": 1
+      },
+      "Payment": {
+        "3rd-party": 3
+      },
+      "CSS": {
+        "3rd-party": 1,
+        "公式系": 1
+      },
+      "Deployment": {
+        "3rd-party": 2
+      },
+      "Fonts": {
+        "公式系": 2
+      }
+    }
+  }
+}

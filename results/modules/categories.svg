@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 592" width="720" height="592" role="img" aria-labelledby="t d">
+<title id="t">Nuxt 4 で使えるモジュールのカテゴリ別件数（277件）</title>
+<desc id="d">Libraries 55, UI 48, Extensions 29, Security 22, Devtools 21, CMS 16, Database 13, Request 13, SEO 12, AI 10, Performance 9, Analytics 8, Images 5, Monitoring 4, Ecommerce 3, Payment 3, CSS 2, Deployment 2, Fonts 2</desc>
+<style>
+  svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --bar:#2a78d6; font-family: system-ui, sans-serif; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --bar:#3987e5; } }
+  .bg { fill: var(--surface); } .bar { fill: var(--bar); }
+  .h1 { fill: var(--ink); font-size: 17px; font-weight: 700; } .h2 { fill: var(--ink2); font-size: 12px; }
+  .label { fill: var(--ink2); font-size: 12px; } .value { fill: var(--ink); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .foot { fill: var(--muted); font-size: 11px; } g:hover .bar { opacity: .8; }
+</style>
+<rect class="bg" width="720" height="592"/>
+<text class="h1" x="24" y="32">Nuxt 4 で使えるモジュールのカテゴリ別件数（277件）</text>
+<text class="h2" x="24" y="54">公式系（official + community）47件・3rd-party 230件</text>
+<g><title>Libraries: 55件</title>
+  <rect x="0" y="76" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="88" text-anchor="end" dominant-baseline="central">Libraries</text>
+  <path class="bar" d="M120,80h540a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-540z"/>
+  <text class="value" x="670" y="88" dominant-baseline="central">55</text></g>
+<g><title>UI: 48件</title>
+  <rect x="0" y="100" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="112" text-anchor="end" dominant-baseline="central">UI</text>
+  <path class="bar" d="M120,104h470.76363636363635a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-470.76363636363635z"/>
+  <text class="value" x="600.7636363636364" y="112" dominant-baseline="central">48</text></g>
+<g><title>Extensions: 29件</title>
+  <rect x="0" y="124" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="136" text-anchor="end" dominant-baseline="central">Extensions</text>
+  <path class="bar" d="M120,128h282.8363636363636a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-282.8363636363636z"/>
+  <text class="value" x="412.8363636363636" y="136" dominant-baseline="central">29</text></g>
+<g><title>Security: 22件</title>
+  <rect x="0" y="148" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="160" text-anchor="end" dominant-baseline="central">Security</text>
+  <path class="bar" d="M120,152h213.60000000000002a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-213.60000000000002z"/>
+  <text class="value" x="343.6" y="160" dominant-baseline="central">22</text></g>
+<g><title>Devtools: 21件</title>
+  <rect x="0" y="172" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="184" text-anchor="end" dominant-baseline="central">Devtools</text>
+  <path class="bar" d="M120,176h203.70909090909092a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-203.70909090909092z"/>
+  <text class="value" x="333.70909090909095" y="184" dominant-baseline="central">21</text></g>
+<g><title>CMS: 16件</title>
+  <rect x="0" y="196" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="208" text-anchor="end" dominant-baseline="central">CMS</text>
+  <path class="bar" d="M120,200h154.25454545454545a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-154.25454545454545z"/>
+  <text class="value" x="284.25454545454545" y="208" dominant-baseline="central">16</text></g>
+<g><title>Database: 13件</title>
+  <rect x="0" y="220" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="232" text-anchor="end" dominant-baseline="central">Database</text>
+  <path class="bar" d="M120,224h124.58181818181819a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-124.58181818181819z"/>
+  <text class="value" x="254.5818181818182" y="232" dominant-baseline="central">13</text></g>
+<g><title>Request: 13件</title>
+  <rect x="0" y="244" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="256" text-anchor="end" dominant-baseline="central">Request</text>
+  <path class="bar" d="M120,248h124.58181818181819a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-124.58181818181819z"/>
+  <text class="value" x="254.5818181818182" y="256" dominant-baseline="central">13</text></g>
+<g><title>SEO: 12件</title>
+  <rect x="0" y="268" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="280" text-anchor="end" dominant-baseline="central">SEO</text>
+  <path class="bar" d="M120,272h114.69090909090909a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-114.69090909090909z"/>
+  <text class="value" x="244.6909090909091" y="280" dominant-baseline="central">12</text></g>
+<g><title>AI: 10件</title>
+  <rect x="0" y="292" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="304" text-anchor="end" dominant-baseline="central">AI</text>
+  <path class="bar" d="M120,296h94.9090909090909a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-94.9090909090909z"/>
+  <text class="value" x="224.9090909090909" y="304" dominant-baseline="central">10</text></g>
+<g><title>Performance: 9件</title>
+  <rect x="0" y="316" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="328" text-anchor="end" dominant-baseline="central">Performance</text>
+  <path class="bar" d="M120,320h85.01818181818182a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-85.01818181818182z"/>
+  <text class="value" x="215.0181818181818" y="328" dominant-baseline="central">9</text></g>
+<g><title>Analytics: 8件</title>
+  <rect x="0" y="340" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="352" text-anchor="end" dominant-baseline="central">Analytics</text>
+  <path class="bar" d="M120,344h75.12727272727273a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-75.12727272727273z"/>
+  <text class="value" x="205.12727272727273" y="352" dominant-baseline="central">8</text></g>
+<g><title>Images: 5件</title>
+  <rect x="0" y="364" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="376" text-anchor="end" dominant-baseline="central">Images</text>
+  <path class="bar" d="M120,368h45.45454545454545a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-45.45454545454545z"/>
+  <text class="value" x="175.45454545454544" y="376" dominant-baseline="central">5</text></g>
+<g><title>Monitoring: 4件</title>
+  <rect x="0" y="388" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="400" text-anchor="end" dominant-baseline="central">Monitoring</text>
+  <path class="bar" d="M120,392h35.56363636363636a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-35.56363636363636z"/>
+  <text class="value" x="165.56363636363636" y="400" dominant-baseline="central">4</text></g>
+<g><title>Ecommerce: 3件</title>
+  <rect x="0" y="412" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="424" text-anchor="end" dominant-baseline="central">Ecommerce</text>
+  <path class="bar" d="M120,416h25.672727272727272a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-25.672727272727272z"/>
+  <text class="value" x="155.6727272727273" y="424" dominant-baseline="central">3</text></g>
+<g><title>Payment: 3件</title>
+  <rect x="0" y="436" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="448" text-anchor="end" dominant-baseline="central">Payment</text>
+  <path class="bar" d="M120,440h25.672727272727272a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-25.672727272727272z"/>
+  <text class="value" x="155.6727272727273" y="448" dominant-baseline="central">3</text></g>
+<g><title>CSS: 2件</title>
+  <rect x="0" y="460" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="472" text-anchor="end" dominant-baseline="central">CSS</text>
+  <path class="bar" d="M120,464h15.781818181818181a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-15.781818181818181z"/>
+  <text class="value" x="145.78181818181818" y="472" dominant-baseline="central">2</text></g>
+<g><title>Deployment: 2件</title>
+  <rect x="0" y="484" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="496" text-anchor="end" dominant-baseline="central">Deployment</text>
+  <path class="bar" d="M120,488h15.781818181818181a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-15.781818181818181z"/>
+  <text class="value" x="145.78181818181818" y="496" dominant-baseline="central">2</text></g>
+<g><title>Fonts: 2件</title>
+  <rect x="0" y="508" width="720" height="24" fill="transparent"/>
+  <text class="label" x="112" y="520" text-anchor="end" dominant-baseline="central">Fonts</text>
+  <path class="bar" d="M120,512h15.781818181818181a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h-15.781818181818181z"/>
+  <text class="value" x="145.78181818181818" y="520" dominant-baseline="central">2</text></g>
+<text class="foot" x="24" y="560">対象: Nuxt 4 対応を宣言し、deprecated でなく、Nuxt 4.0.0 公開（2025-07-15）以降に npm で更新されたもの（一覧掲載 433件中）</text>
+<text class="foot" x="24" y="578">データ: @nuxt/modules 0.6.0-8d66ee（2026-10-14 公開）と npm レジストリ・集計日 2026-10-15</text>
+</svg>

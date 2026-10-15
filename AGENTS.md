@@ -2,11 +2,24 @@
 
 FEBiデッキで作業するAIアシスタント向けの指示です。FEBi（Frontend Biweekly）はSun Asteriskの社内フロントエンド勉強会シリーズです。各トークはそれぞれ専用のリポジトリにある[Slidev](https://sli.dev)デッキで、このテンプレートから作成され、GitHub Pagesに公開デプロイされます。
 
-**[PRINCIPLES.md](PRINCIPLES.md)**（良いトークとは何か）と、**[HANDBOOK.md](HANDBOOK.md)**（ここでの作り方：コマンド、ファイル、スタイル、アイコン、リンク、コンポーネント、デモ、言語）を読んでください。スライドのパターンは[docs/recipes.md](docs/recipes.md)にあります。手作業での手順もすべて`HANDBOOK.md`にあります。ドキュメントとスキルの内容を一致させ、チェックを再実装するよりも`package.json`のスクリプト（`pnpm check`、`pnpm preflight`）を優先してください。
+**[PRINCIPLES.md](slides/PRINCIPLES.md)**（良いトークとは何か）と、**[HANDBOOK.md](slides/HANDBOOK.md)**（ここでの作り方：コマンド、ファイル、スタイル、アイコン、リンク、コンポーネント、デモ、言語）を読んでください。スライドのパターンは[docs/recipes.md](slides/docs/recipes.md)にあります。手作業での手順もすべて`HANDBOOK.md`にあります。ドキュメントとスキルの内容を一致させ、チェックを再実装するよりも`package.json`のスクリプト（`pnpm check`、`pnpm preflight`）を優先してください。
+
+## このリポジトリの構成
+
+このリポジトリは、FEBiデッキに加えて、Nuxtの検証・集計・デモをまとめて置いています。**デッキはすべて`slides/`の下**にあります。このファイル、`slides/HANDBOOK.md`、`.claude/`のスキルに出てくるデッキ関連のパス（`slides.md`、`pages/`、`components/`、`style.css`、`docs/recipes.md`など）は、`slides/`からの相対パスとして読んでください。`pnpm dev`や`pnpm check`などのコマンドは、ルートで実行すると`slides/`に委譲されます（ルートの`package.json`）。
+
+| フォルダ | 中身 |
+|---|---|
+| `slides/` | 発表資料（Slidevデッキ、FEBiテンプレート一式） |
+| `demo/` | 発表のライブデモに使うNuxtプロジェクト |
+| `experiment/nuxt/`、`experiment/next/` | AIに同じ指示を出す検証の生成物（Nuxt / Next.js） |
+| `scripts/` | 集計スクリプト（`pnpm modules`など） |
+| `results/` | 集計結果（`results/modules/`、検証の計測JSON） |
+| `docs/` | 調査資料（`docs/context/`）などのドキュメント |
 
 ## トークのコンテキスト
 
-トーク固有のコンテキストは、**`CLAUDE.local.md`**（gitignore対象。書式は[docs/talk-plan.md](docs/talk-plan.md)）にあります：ピッチ、構成、却下したアイデア、言語の選択、進め方、スライドの進捗。
+トーク固有のコンテキストは、**`CLAUDE.local.md`**（gitignore対象。書式は[docs/talk-plan.md](slides/docs/talk-plan.md)）にあります：ピッチ、構成、却下したアイデア、言語の選択、進め方、スライドの進捗。
 
 - このファイルが存在しない場合、トークのスコープはまだ決まっていません。スライドを書く前に`/kickoff`を提案してください。
 - 求められていないのに**却下したアイデア**を持ち出さないでください。

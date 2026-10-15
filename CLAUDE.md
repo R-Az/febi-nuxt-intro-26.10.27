@@ -1,3 +1,3 @@
 @AGENTS.md
-@PRINCIPLES.md
-@HANDBOOK.md
+@slides/PRINCIPLES.md
+@slides/HANDBOOK.md

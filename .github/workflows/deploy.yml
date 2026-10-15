@@ -34,8 +34,10 @@ jobs:
         with:
           node-version: '24'
           cache: 'pnpm'
+          cache-dependency-path: slides/pnpm-lock.yaml
 
       - name: Install dependencies
+        working-directory: slides
         run: pnpm install --frozen-lockfile
         env:
           # playwright-chromium is only for local `pnpm export`; CI doesn't need the browser
@@ -68,17 +70,19 @@ jobs:
 
       # The template repo itself publishes its guide; a talk repo publishes slides.md
       - name: Preflight (non-blocking; warnings show as annotations)
+        working-directory: slides
         run: pnpm preflight --offline ${{ github.repository == 'sun-choma/febi-template' && '--guide' || '' }}
         continue-on-error: true
 
       - name: Build Slidev
+        working-directory: slides
         run: pnpm build ${{ github.repository == 'sun-choma/febi-template' && 'guide.md' || '' }}
 
       - name: Upload artifact
         if: steps.pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: slides/dist
 
       - name: Deploy to GitHub Pages
         if: steps.pages.outcome == 'success'
