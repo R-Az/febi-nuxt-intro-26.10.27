@@ -70,6 +70,49 @@ cd demo && pnpm dev
 </style>
 
 ---
+
+# ライブデモ：Lintも最初から使える
+
+<div class="sub">テンプレートに@nuxt/eslintが入っているので、設定を書かずにTypeScriptとVueのルールが効く</div>
+
+<div class="cols">
+<div>
+
+<div class="where"><lucide-file-code /> app/pages/bad.vue（わざと問題を入れる）</div>
+
+```vue
+<script setup lang="ts">
+const unused = 1
+const count: any = ref(0)
+</script>
+
+<template>
+  <ul>
+    <li v-for="n in count">{{ n }}</li>
+  </ul>
+</template>
+```
+
+</div>
+<div>
+
+<div class="where"><lucide-terminal /> <code>pnpm lint</code>の結果（ルール名で抜粋）</div>
+
+```text
+2:7   @typescript-eslint/no-unused-vars
+3:14  @typescript-eslint/no-explicit-any
+8:5   vue/require-v-for-key
+8:28  vue/singleline-html-element-content-newline
+```
+
+<div class="note">自分のプロジェクトに足すときは<code>pnpm nuxt module add eslint</code>の1コマンド。<code>eslint.config.mjs</code>も作られる</div>
+
+</div>
+</div>
+
+<div class="source"><lucide-link /><a href="https://eslint.nuxt.com/packages/module" target="_blank">Nuxt ESLint：Module</a></div>
+
+---
 class: roomy
 ---
 
@@ -136,32 +179,61 @@ export default defineNuxtConfig({
 
 ---
 
-# モジュールを足せば、すぐ使える
+# モジュールが用意するもの、自分で書くもの
 
-<div class="sub">足すと、部品・composable・APIがそのまま使える状態になる</div>
+<div class="sub">例：nuxt-auth-utils。共通の仕組みはモジュールが持ち、書くのはアプリ固有の部分に絞れる</div>
 
-<div class="flow">
-  <div class="step">pnpm nuxt module add<small>1コマンド</small></div>
-  <lucide-arrow-right class="arrow" />
-  <div class="step lit">モジュールが登録する<small>部品、composable、サーバーのAPI、ビルドの設定</small></div>
-  <lucide-arrow-right class="arrow" />
-  <div class="step">すぐ使える<small>ほとんど実装しなくていい</small></div>
+<div class="cols auth-split">
+<div>
+
+<div class="where"><lucide-server /> server/api/login.post.ts（自分で書く）</div>
+
+```ts {3-4|5-6|7-8}
+export default defineEventHandler(async (e) => {
+  const { email, password } = await readBody(e)
+  // 保存先からの取得と照合は自分で書く
+  const user = await findUser(email)
+  const ok = user && await verifyPassword(user.hash, password)
+  if (!ok) throw createError({ statusCode: 401 })
+  // 暗号化してCookieに保存するのはモジュール
+  await setUserSession(e, { user: { id: user.id } })
+})
+```
+
+</div>
+<div>
+
+<div class="card lit">
+<div class="col-h">モジュールが用意する</div>
+
+- セッションの暗号化とCookie
+- `useUserSession()`などの関数
+- ハッシュ化と照合、OAuth
+
 </div>
 
-例：<code>nuxt-auth-utils</code>を足すと
+<div class="card" style="margin-top: 0.8rem">
+<div class="col-h">自分で書く</div>
 
-- **画面**：`useUserSession()`で、ログイン中のユーザーを取れる
-- **サーバー**：`setUserSession()`や`requireUserSession()`で、セッションを扱える
-- **パスワード**：`hashPassword()`と`verifyPassword()`で、ハッシュ化と照合ができる
-- **パスキー**：`webAuthn: true`を足すと対応する（保存先のDBは自分で用意する）
+- ユーザーの保存と照合
+- ログインのAPIと画面
+- ログイン必須にするページ
 
-<div class="source"><lucide-link /><a href="https://nuxt.com/docs/4.x/guide/modules" target="_blank">Nuxt：Modules</a>・<a href="https://github.com/atinux/nuxt-auth-utils" target="_blank">GitHub：nuxt-auth-utils</a></div>
+</div>
+</div>
+</div>
+
+<div class="source"><lucide-link /><a href="https://github.com/atinux/nuxt-auth-utils" target="_blank">GitHub：nuxt-auth-utils</a></div>
+
+<style>
+.auth-split > :first-child { flex: 1.5 1 0; }
+</style>
 
 ---
 
 # TypeScriptの設定を、モジュールに任せる
 
-<div class="sub">TypeScriptのプロジェクトは設定ファイルが増えやすい。その一部をモジュールが引き受ける</div>
+<div class="sub">TypeScriptのプロジェクトは設定ファイルが増えやすい。デモのLintも、この仕組みで動いていた</div>
 
 <div class="cols">
 <div class="card">
@@ -177,7 +249,7 @@ export default withNuxt()
 
 </div>
 <div class="card">
-<div class="col-h">計測タグ：@nuxt/scripts</div>
+<div class="col-h">Google Analytics：@nuxt/scripts</div>
 
 ```ts
 // nuxt.config.ts
@@ -194,49 +266,6 @@ scripts: {
 </div>
 
 <div class="source"><lucide-link /><a href="https://eslint.nuxt.com/packages/module" target="_blank">Nuxt ESLint：Module</a>・<a href="https://scripts.nuxt.com/docs/getting-started" target="_blank">Nuxt Scripts：Getting Started</a>・<a href="https://scripts.nuxt.com/scripts/google-analytics" target="_blank">Nuxt Scripts：Google Analytics</a></div>
-
----
-
-# ライブデモ：Lintも最初から使える
-
-<div class="sub">テンプレートに@nuxt/eslintが入っているので、設定を書かずにTypeScriptとVueのルールが効く</div>
-
-<div class="cols">
-<div>
-
-<div class="where"><lucide-file-code /> app/pages/bad.vue（わざと問題を入れる）</div>
-
-```vue
-<script setup lang="ts">
-const unused = 1
-const count: any = ref(0)
-</script>
-
-<template>
-  <ul>
-    <li v-for="n in count">{{ n }}</li>
-  </ul>
-</template>
-```
-
-</div>
-<div>
-
-<div class="where"><lucide-terminal /> <code>pnpm lint</code>の結果（ルール名で抜粋）</div>
-
-```text
-2:7   @typescript-eslint/no-unused-vars
-3:14  @typescript-eslint/no-explicit-any
-8:5   vue/require-v-for-key
-8:28  vue/singleline-html-element-content-newline
-```
-
-<div class="note">自分のプロジェクトに足すときは<code>pnpm nuxt module add eslint</code>の1コマンド。<code>eslint.config.mjs</code>も作られる</div>
-
-</div>
-</div>
-
-<div class="source"><lucide-link /><a href="https://eslint.nuxt.com/packages/module" target="_blank">Nuxt ESLint：Module</a></div>
 
 ---
 
@@ -283,52 +312,12 @@ th, td { padding-top: 0.35rem !important; padding-bottom: 0.35rem !important; }
 <div class="source"><lucide-link /><a href="https://github.com/nuxt/modules" target="_blank">@nuxt/modules 0.6.0-8d66eeとnpmのデータを集計（2026.10.15時点）</a></div>
 
 ---
-
-# 定期処理も同じプロジェクトに書ける
-
-<div class="sub">Nitro Tasks：cron式で、決まった時刻に処理を動かす</div>
-
-<div class="cols">
-<div>
-
-<div class="where"><lucide-server /> server/tasks/check-missing.ts</div>
-
-```ts
-export default defineTask({
-  meta: { name: 'check-missing' },
-  async run() {
-    // 前日の打刻漏れを探して記録する
-    return { result: 'ok' }
-  },
-})
-```
-
-</div>
-<div>
-
-<div class="where"><lucide-settings /> nuxt.config.ts</div>
-
-```ts
-export default defineNuxtConfig({
-  nitro: {
-    experimental: { tasks: true },
-    scheduledTasks: { '0 0 * * *': ['check-missing'] },
-  },
-})
-```
-
-</div>
-</div>
-
-- **実験的な機能**：有効にするには<code>experimental.tasks</code>の設定が要る
-- **デプロイ先が限られる**：定期実行できるのは、Node.jsのサーバーやCloudflareなど
-
-<div class="source"><lucide-link /><a href="https://v2.nitro.build/guide/tasks" target="_blank">Nitro：Tasks</a></div>
-
----
 routeAlias: fast-start-point
 class: roomy
+style: "--accent: var(--green)"
 ---
+
+<div class="kicker">02のまとめ</div>
 
 # テンプレートで始めて、モジュールで足す
 
@@ -341,10 +330,10 @@ class: roomy
 <code>pnpm create nuxt -t ui/dashboard</code>で、画面のある状態から始まる。部品はNuxt UIがそろえている
 
 </div>
-<div class="card lit">
+<div class="card">
 <div class="col-h">足す</div>
 
-<code>pnpm nuxt module add</code>で、認証もLintも計測も同じ手順で足せる。足せば、ほとんど実装せずに機能が使える
+<code>pnpm nuxt module add</code>で、認証もLintもGoogle Analyticsも同じ手順で足せる。共通の仕組みはモジュールが持ち、書くのはアプリ固有の部分に絞れる
 
 </div>
 </div>

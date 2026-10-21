@@ -75,7 +75,7 @@ class: roomy
 
 1. **ルーティングを書かずに始められる**：置き場所でURLや役割が決まる（フォルダの決まり）
 2. **importを書かなくていい**：部品や関数がそのまま使える（自動インポート）
-3. **APIも同じプロジェクトで書ける**：別のサーバーを立てなくていい（`server/api`）
+3. **APIも同じプロジェクトで書ける**：別のサーバーを立てなくていい（`server/api`、定期処理も）
 4. **機能を1コマンドで足せる**：認証やLintもすぐ入る（テンプレートとモジュール。02で紹介）
 
 <div class="note">現行はNuxt 4（2026.10時点の最新は4.6）。Node.jsのサーバー、サーバーレス、静的ファイルなどに出力できる</div>
@@ -190,7 +190,6 @@ const { data: records } = useMonthlyRecords(month)
 <div class="source"><lucide-link /><a href="https://nuxt.com/docs/4.x/directory-structure/app/composables" target="_blank">Nuxt：composables/</a>・<a href="https://nuxt.com/docs/4.x/api/composables/use-fetch" target="_blank">Nuxt：useFetch</a></div>
 
 ---
-routeAlias: what-is-point
 class: roomy
 ---
 
@@ -229,3 +228,79 @@ const { data: users } =
 <div v-click class="punch">メリット：画面とAPIを1つのリポジトリで管理し、まとめてデプロイできる</div>
 
 <div class="source"><lucide-link /><a href="https://nuxt.com/docs/4.x/directory-structure/server" target="_blank">Nuxt：server/</a></div>
+
+---
+
+# ③ 定期処理も同じプロジェクトに書ける
+
+<div class="sub">Nitro Tasks：cron式で、決まった時刻に処理を動かす</div>
+
+<div class="cols">
+<div>
+
+<div class="where"><lucide-server /> server/tasks/check-missing.ts</div>
+
+```ts
+export default defineTask({
+  meta: { name: 'check-missing' },
+  async run() {
+    // 前日の打刻漏れを探して記録する
+    return { result: 'ok' }
+  },
+})
+```
+
+</div>
+<div>
+
+<div class="where"><lucide-settings /> nuxt.config.ts</div>
+
+```ts
+export default defineNuxtConfig({
+  nitro: {
+    experimental: { tasks: true },
+    scheduledTasks: { '0 0 * * *': ['check-missing'] },
+  },
+})
+```
+
+</div>
+</div>
+
+- **実験的な機能**：有効にするには<code>experimental.tasks</code>の設定が要る
+- **デプロイ先が限られる**：定期実行できるのは、Node.jsのサーバーやCloudflareなど
+
+<div class="source"><lucide-link /><a href="https://v2.nitro.build/guide/tasks" target="_blank">Nitro：Tasks</a></div>
+
+---
+routeAlias: what-is-point
+---
+
+<div class="kicker">01のまとめ</div>
+
+# 画面とAPIを、1つのプロジェクトで書く
+
+<div class="sub">Vueの画面に、サーバーと置き場所の決まりを足したのがNuxt</div>
+
+<div class="cols">
+<div class="card">
+<div class="col-h">① フォルダの決まり</div>
+
+置き場所でURLや役割が決まる。誰が書いても同じ構成になる
+
+</div>
+<div class="card">
+<div class="col-h">② 自動インポート</div>
+
+部品や関数、自作のcomposableをimportなしで使える
+
+</div>
+<div class="card">
+<div class="col-h">③ APIと定期処理</div>
+
+<code>server/api</code>と<code>server/tasks</code>に置けば、別のサーバーは要らない
+
+</div>
+</div>
+
+<div class="bridge">④ 機能を1コマンドで足す仕組みは、<b>次のセクション</b>で</div>

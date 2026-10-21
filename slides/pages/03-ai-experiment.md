@@ -21,9 +21,9 @@ style: "--accent: var(--cyan)"
   <lucide-arrow-right class="arrow" />
   <div class="step lit">① 作る<small>ゼロからアプリを作る</small></div>
   <lucide-arrow-right class="arrow" />
-  <div class="step lit">② 足す<small>UI部品・Lint・計測を足す</small></div>
+  <div class="step lit">② 足す<small>UI部品・Lint・GAを足す</small></div>
   <lucide-arrow-right class="arrow" />
-  <div class="step">判定<small>手で動かして確かめる</small></div>
+  <div class="step">判定<small>別のAIが画面を操作して確かめる</small></div>
 </div>
 
 - **アプリ**：従業員10〜30人の会社で使う勤怠管理。DBはモックにして、APIは自分で書かせる
@@ -38,7 +38,7 @@ style: "--accent: var(--cyan)"
 
 # 指示文と受け入れ条件
 
-<div class="sub">AIにはこの条件を渡し、満たしたかどうかを人が動かして判定した</div>
+<div class="sub">AIにはこの条件を渡し、満たしたかどうかは別のAIが画面を操作して確かめた</div>
 
 <div class="cols">
 <div class="card">
@@ -67,7 +67,7 @@ style: "--accent: var(--cyan)"
 <li>UI部品で画面を作り直す（ダークモード）</li>
 <li>テーマ設定で主色・角丸・書体・行の高さ</li>
 <li>Lintを入れてエラー0件</li>
-<li>計測タグは同意後に読み込む</li>
+<li>Google Analyticsは同意後に読み込む</li>
 <li>今ある機能を壊さない</li>
 <li>README</li>
 </ol>
@@ -108,7 +108,7 @@ style: "--accent: var(--cyan)"
 | コード行数 | cloc（ロックファイルは除く） |
 | import行数 | importで始まる行を数える |
 | ②の変更量 | 始める前とのgit diff |
-| 受け入れ条件 | 人が動かして確かめる（curl、ブラウザ） |
+| 受け入れ条件 | 別のAIが画面の操作・テスト・curlで確かめる |
 
 </div>
 </div>
@@ -180,7 +180,7 @@ class: roomy
 
 # ② 足す：手間はほぼ同じだった
 
-<div class="sub">UI部品・カスタマイズ・Lint・計測を足させた。2回の平均で、どちらも条件18件をすべて満たした</div>
+<div class="sub">UI部品・カスタマイズ・Lint・GAを足させた。2回の平均で、どちらも条件18件をすべて満たした</div>
 
 | 指標 | Nuxt | Next.js |
 |---|--:|--:|
@@ -189,43 +189,24 @@ class: roomy
 | 所要時間（分） | 13.3 | 12.7 |
 | 設定・つなぎ込みの追加行数 | 172 | 206 |
 
-- **UI部品**：NuxtはNuxt UI、Next.jsはMantine（2回とも）
-- **Lintと計測**：Nuxtはモジュールで足し、Next.jsは最初からある設定と自前のコードなどで足した
+- **足したもの**：NuxtはNuxt UIとモジュール、Next.jsはMantineと既存のLint設定、自前のコード
+- **見た目の設定**：行数はNuxt UIが半分以下。ただしフレームワークよりUIライブラリの差
 
 <div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/blob/master/results/experiment/summary.md" target="_blank">GitHub：results/experiment/summary.md</a></div>
 
 ---
-class: roomy
----
-
-# 差が出たのは、カスタマイズの設定の量
-
-<div class="sub">主色・角の丸み・書体・表の行の高さを、全画面に効かせるための行数</div>
-
-<div class="bars">
-<div class="bar"><span class="label">Nuxt 1回目</span><span class="fill" style="--w: 44%"></span><span class="n">19</span></div>
-<div class="bar"><span class="label">Nuxt 2回目</span><span class="fill" style="--w: 37%"></span><span class="n">16</span></div>
-<div class="bar"><span class="label">Next.js 1回目</span><span class="fill" style="--w: 100%; --c: var(--pink)"></span><span class="n">43</span></div>
-<div class="bar"><span class="label">Next.js 2回目</span><span class="fill" style="--w: 98%; --c: var(--pink)"></span><span class="n">42</span></div>
-</div>
-
-- **Nuxt UI**：CSSの変数と`app.config.ts`の十数行で、全画面の見た目が変わった
-- **Mantine**：`createTheme`に主色の10段階や部品ごとの既定値を書き、40行あまりになった
-
-<div class="note">どちらも部品ごとにクラスを書いて回る必要は、ほぼなかった（上書きはNext.jsの1回目に1か所だけ）</div>
-
-<div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/tree/master/results/experiment" target="_blank">GitHub：results/experiment（数えた行は各記録のnotesに残している）</a></div>
-
----
 routeAlias: ai-experiment-point
+style: "--accent: var(--cyan)"
 ---
+
+<div class="kicker">03のまとめ</div>
 
 # AIで作っても、Nuxtは書く量が少なかった
 
 <div class="sub">作るときに差が出て、足すときはほぼ互角だった</div>
 
 <div class="cols">
-<div class="card lit">
+<div class="card">
 <div class="col-h">① 作る</div>
 
 出力トークンは約0.8倍、コストは約0.65倍、importは約4分の1。認証と定期処理はモジュールに任せていた
@@ -234,7 +215,7 @@ routeAlias: ai-experiment-point
 <div class="card">
 <div class="col-h">② 足す</div>
 
-トークン・コスト・時間はほぼ同じ。カスタマイズの設定はNuxtが半分以下の行数で済んだ
+トークン・コスト・時間はほぼ同じ。どちらも定番のUIライブラリとLintで足せた
 
 </div>
 </div>
@@ -243,6 +224,7 @@ routeAlias: ai-experiment-point
 
 - 各フレームワーク2回、1つのモデルでの結果なので、傾向として読んでほしい
 - AIの学習データの量（Next.jsの方が多い）はそろえられない
+- 判定もAI（画面の操作とコマンド）で、人による確認はしていない
 - 依存の数はNuxtの方が多い（型チェック用のパッケージを自分で追加したため）
 
 </div>

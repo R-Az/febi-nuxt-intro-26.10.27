@@ -109,7 +109,7 @@ Vueで画面を書き、<code>server/api</code>にAPIを置く。置き場所が
 <div class="card">
 <div class="col-h">1コマンドで始まる</div>
 
-テンプレートから立ち上げ、要るものはモジュールで足す。足せば、ほとんど実装せずに機能が使える
+テンプレートから立ち上げ、要るものはモジュールで足す。書くのはアプリ固有の部分に絞れる
 
 </div>
 </div>
@@ -121,7 +121,7 @@ Vueで画面を書き、<code>server/api</code>にAPIを置く。置き場所が
 同じ指示で、出力トークンは約0.8倍、importは約4分の1。足す手間はNext.jsとほぼ同じ
 
 </div>
-<div class="card lit">
+<div class="card">
 <div class="col-h">PoCや社内ツールに向く</div>
 
 React前提の資産がないなら、試してみる価値がある。Next.jsが劣っているわけではない

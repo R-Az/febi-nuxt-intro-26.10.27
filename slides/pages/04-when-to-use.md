@@ -16,16 +16,17 @@ class: roomy
 
 # Next.jsの強みも押さえておく
 
-<div class="sub">Next.jsが劣っているわけではない</div>
+<div class="sub">利用者の多さとReactの資産は、Nuxtにはない強み</div>
 
-- **規模**：利用者も情報も多く、困ったときに答えが見つかりやすい
-- **ライブラリ**：SaaSのSDKやUI部品は、React向けが先に出ることが多い
-- **SEOのファイル規約**：<code>sitemap.ts</code>と<code>robots.ts</code>が本体にある（Nuxtはメタデータは本体、sitemapとrobotsはモジュール）
-- **サーバーとクライアントの使い分け**：Server Componentsで、どこで動かすかを細かく決められる
+- **情報と人の多さ**：困ったときの答えや、経験のある人が見つかりやすい
+- **Reactのエコシステム**：UI部品やSaaSのSDKは、React向けが先に出ることが多い
+- **Server Components**：サーバーで動かす部品を選べ、ブラウザに送るJSを減らせる
+- **Server Functions**：フォームの送信などを、APIのURLを作らずに関数として呼べる
+- **React Native**：モバイルアプリと、知識やコードを共有しやすい
 
 <div v-click class="punch">作るものとチームに合わせて選べばいい</div>
 
-<div class="source"><lucide-link /><a href="https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap" target="_blank">Next.js：sitemap.xml</a>・<a href="https://nuxt.com/docs/4.x/getting-started/seo-meta" target="_blank">Nuxt：SEO and Meta</a></div>
+<div class="source"><lucide-link /><a href="https://nextjs.org/docs/app/getting-started/server-and-client-components" target="_blank">Next.js：Server and Client Components</a>・<a href="https://nextjs.org/docs/app/getting-started/mutating-data" target="_blank">Next.js：Mutating Data</a></div>
 
 ---
 
@@ -130,7 +131,10 @@ watch(filter, () => load(filter), {
 
 ---
 routeAlias: when-to-use-point
+style: "--accent: var(--orange)"
 ---
+
+<div class="kicker">04のまとめ</div>
 
 # Nuxtが向いている場面、向かない場面
 

@@ -24,6 +24,20 @@
   margin-top: 0.5rem;
 }
 
+/* --- Section summary label above the h1: <div class="kicker">01のまとめ</div>.
+       Colour follows the slide's --accent (set it in frontmatter like the divider). --- */
+.kicker {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent, var(--purple));
+  border: 1px solid var(--accent, var(--purple));
+  border-radius: 999px;
+  padding: 0.1rem 0.7rem;
+  margin-bottom: 0.4rem;
+}
+
 /* --- Subtitle line directly under a slide's h1 --- */
 .sub {
   font-size: 1rem;
