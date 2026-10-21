@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "slides",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "-C",
+        "slides",
+        "exec",
+        "slidev",
+        "--port",
+        "3030"
+      ],
+      "port": 3030
+    }
+  ]
+}

@@ -26,7 +26,7 @@
 | --- | --- | --- |
 | import | **自動インポート**(コンポーネント・composable・Vue API) | 明示的に import が必要 |
 | 拡張の仕組み | **モジュール**(`modules: [...]` に足すとフックまで自動配線) | 公式のモジュール機構はない。npm パッケージを個別に組み込む |
-| モジュール一覧 | **公式一覧 nuxt.com/modules に数百件**。Official / Community / 3rd-party に分類、`nuxi module add` で統一的に導入 | 公式の一覧・統一インストール手段なし |
+| モジュール一覧 | **公式一覧 nuxt.com/modules にまとまり、Nuxt 4 で使えるものは 300 弱**。Official / Community / 3rd-party に分類、`nuxi module add` で統一的に導入 | 公式の一覧・統一インストール手段なし |
 | テンプレート | `npm create nuxt -- -t github:...` で公式・自作どちらも 1 コマンド | `create-next-app --example` で公式例や GitHub リポジトリから作成可 |
 | ルーティング | `pages/` ファイルベース | `app/` ファイルベース(App Router) |
 | サーバー/クライアント | 基本はユニバーサル(SSR+ハイドレーション)。境界を意識する場面が少ない | Server / Client Components を区別(`'use client'`)。強力だが学習・判断コストあり |
@@ -83,7 +83,7 @@ export default async function Page() {
 
 ## 4. Nuxt が勝ちやすい領域(発表の主張にしてよい部分)
 
-1. **モジュールの数と入れ方の統一**(★本命): 数百のモジュールが公式一覧にまとまり、どれも `nuxi module add` 1 行で導入・自動配線される(SEO 一式、Scripts、UI、Image、Fonts、Content、Auth、i18n)。
+1. **モジュールの数と入れ方の統一**(★本命): Nuxt 4 で使えるモジュール 300 弱が公式一覧にまとまり、どれも `nuxi module add` 1 行で導入・自動配線される(SEO 一式、Scripts、UI、Image、Fonts、Content、Auth、i18n)。
 2. **テンプレートが薄くて済む**: 機能はモジュールが持つので、自作テンプレートは「modules の並び」程度で十分。
 3. **書くコードの少なさ**: 自動インポート+規約。
 4. **無料で強い UI 基盤**: Nuxt UI v4 + 公式テンプレート群。

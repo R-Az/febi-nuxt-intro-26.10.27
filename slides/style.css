@@ -41,14 +41,15 @@
 .cols > * { flex: 1 1 0; min-width: 0; }
 .cols > .fit { flex: 0 0 auto; }
 .cols.middle { align-items: center; }
+.cols > .card { align-self: stretch; }   /* cards side by side share one height */
 
 /* Small column header, e.g. NG / OK, browser / server. Not uppercased: labels are often code. */
 .col-h {
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: var(--comment);
-  margin-bottom: 0.75rem;
+  color: var(--cyan);
+  margin-bottom: 0.6rem;
 }
 
 /* Good / bad colouring for headers, icons, table cells */
@@ -261,3 +262,24 @@
   line-height: 1;
   translate: var(--emoji-nudge);
 }
+
+/* --- Horizontal bar chart in HTML (talk-specific). One row per value; the bar width is set
+       inline as a share of the largest value: <div class="bar"><span class="label">…</span>
+       <span class="fill" style="--w: 80%"></span><span class="n">48</span></div>.
+       Colour per row with --c (default green); always keep the label so colour isn't the only cue. --- */
+.bars { display: grid; gap: 0.3rem; margin-top: 0.5rem; }
+.bar { display: grid; grid-template-columns: 7rem 1fr 3.5rem; align-items: center; gap: 0.6rem; font-size: 0.8rem; }
+.bar .label { text-align: right; color: var(--comment); }
+.bar .fill { height: 0.75rem; width: var(--w); background: var(--c, var(--green)); border-radius: 0 4px 4px 0; }
+.bar .n { font-variant-numeric: tabular-nums; }
+.bar.muted .fill { background: var(--comment); }
+
+/* --- Roomy slide (talk-specific): for slides whose content fills only the top half.
+       Add `class: roomy` to the slide frontmatter to scale up the body, code and bar charts. --- */
+.roomy ul, .roomy ol, .roomy p { font-size: 1.15em; }
+.roomy .slidev-code { font-size: 0.95rem !important; line-height: 1.6 !important; }
+.roomy .bars { gap: 0.7rem; margin-top: 1rem; }
+.roomy .bar { font-size: 1rem; grid-template-columns: 9rem 1fr 3.5rem; }
+.roomy .bar .fill { height: 1.15rem; }
+.roomy .flow .step { font-size: 1.05rem; }
+.roomy .punch { font-size: 1.35rem; }

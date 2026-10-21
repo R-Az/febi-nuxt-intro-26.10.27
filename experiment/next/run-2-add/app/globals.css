@@ -1,0 +1,11 @@
+/* 見た目の設定は lib/theme.ts（Mantine のテーマ）にまとめている。ここにはページ全体の土台だけを書く。 */
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}

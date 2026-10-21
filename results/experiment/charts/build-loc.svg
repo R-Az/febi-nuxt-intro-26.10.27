@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 242" width="640" height="242" role="img" aria-label="コード行数（ロックファイルを除く）（1段目（アプリを作る））">
+<style>
+  svg { --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781; --nuxt:#2a78d6; --next:#eb6834; font-family: system-ui, sans-serif; }
+  @media (prefers-color-scheme: dark) { svg { --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --nuxt:#3987e5; --next:#d95926; } }
+  .bg { fill: var(--surface); } .bar-nuxt { fill: var(--nuxt); } .bar-next { fill: var(--next); }
+  .h1 { fill: var(--ink); font-size: 16px; font-weight: 700; } .h2 { fill: var(--ink2); font-size: 12px; }
+  .label { fill: var(--ink2); font-size: 12px; } .value { fill: var(--ink); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .foot { fill: var(--muted); font-size: 11px; } g:hover path { opacity: .8; }
+</style>
+<rect class="bg" width="640" height="242"/>
+<text class="h1" x="20" y="28">コード行数（ロックファイルを除く）</text>
+<text class="h2" x="20" y="48">1段目（アプリを作る）・各フレームワーク2回</text>
+<g><title>Nuxt 1回目: 2,562</title>
+  <text class="label" x="102" y="79" text-anchor="end" dominant-baseline="central">Nuxt 1回目</text>
+  <path class="bar-nuxt" d="M110,70h375.300134589502a4,4 0 0 1 4,4v10a4,4 0 0 1 -4,4h-375.300134589502z"/>
+  <text class="value" x="495.300134589502" y="79" dominant-baseline="central">2,562</text></g>
+<g><title>Nuxt 2回目: 1,803</title>
+  <text class="label" x="102" y="109" text-anchor="end" dominant-baseline="central">Nuxt 2回目</text>
+  <path class="bar-nuxt" d="M110,100h262.9313593539704a4,4 0 0 1 4,4v10a4,4 0 0 1 -4,4h-262.9313593539704z"/>
+  <text class="value" x="382.9313593539704" y="109" dominant-baseline="central">1,803</text></g>
+<g><title>Next.js 1回目: 2,556</title>
+  <text class="label" x="102" y="139" text-anchor="end" dominant-baseline="central">Next.js 1回目</text>
+  <path class="bar-next" d="M110,130h374.41184387617767a4,4 0 0 1 4,4v10a4,4 0 0 1 -4,4h-374.41184387617767z"/>
+  <text class="value" x="494.41184387617767" y="139" dominant-baseline="central">2,556</text></g>
+<g><title>Next.js 2回目: 2,972</title>
+  <text class="label" x="102" y="169" text-anchor="end" dominant-baseline="central">Next.js 2回目</text>
+  <path class="bar-next" d="M110,160h436a4,4 0 0 1 4,4v10a4,4 0 0 1 -4,4h-436z"/>
+  <text class="value" x="556" y="169" dominant-baseline="central">2,972</text></g>
+<text class="foot" x="20" y="226">同じ指示文・同じモデル（claude-opus-5-5）で実行。各2回なので傾向として読む</text>
+</svg>

@@ -1,0 +1,38 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* Nuxt UI のテーマ。部品ごとにクラスを書かず、ここの変数で全画面の見た目をそろえる */
+
+@theme static {
+  /* 本文の書体。@nuxt/fonts がこの指定を見つけて Noto Sans JP を読み込む */
+  --font-sans: "Noto Sans JP", system-ui, sans-serif;
+
+  /* ブランドカラー #0F766E を 700 に置いた色の段階（app.config.ts の colors.primary から参照する） */
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-300: #5eead4;
+  --color-brand-400: #2dd4bf;
+  --color-brand-500: #14b8a6;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0f766e;
+  --color-brand-800: #115e59;
+  --color-brand-900: #134e4a;
+  --color-brand-950: #042f2e;
+}
+
+:root {
+  /* 主色：ライトモードはブランドカラーそのもの（白地とのコントラスト比 5.5:1） */
+  --ui-primary: var(--ui-color-primary-700);
+
+  /*
+   * 角の丸み。ボタン・入力欄・セレクトは rounded-md（= --ui-radius × 1.5）を使うので、
+   * ここを 4px ÷ 1.5 にすると全画面のボタンと入力欄が 4px にそろう
+   */
+  --ui-radius: calc(4px / 1.5);
+}
+
+.dark {
+  /* 主色：ダークモードは暗い背景で読みやすいよう明るい段階にする（背景とのコントラスト比 約10:1） */
+  --ui-primary: var(--ui-color-primary-400);
+}

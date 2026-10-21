@@ -17,6 +17,7 @@
     "preflight": "pnpm -C slides preflight",
     "guide": "pnpm -C slides guide",
     "guide:en": "pnpm -C slides guide:en",
-    "modules": "node scripts/count-nuxt-modules.mjs"
+    "modules": "node scripts/count-nuxt-modules.mjs",
+    "experiment": "node scripts/summarize-experiment.mjs"
   }
 }

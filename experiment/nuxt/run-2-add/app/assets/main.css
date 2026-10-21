@@ -1,0 +1,35 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  /* 本文の書体。@nuxt/fonts（Nuxt UI に同梱）が Google Fonts から取得して自前で配信する */
+  --font-sans: 'Noto Sans JP', sans-serif;
+
+  /*
+   * ブランドカラーのパレット。Nuxt UI は主色に、ライトモードでは 500、ダークモードでは 400 を使う。
+   * 500 を会社のブランドカラー #0F766E にし、400 はダークモードの暗い背景でも読める明るさにしている。
+   */
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-300: #5eead4;
+  --color-brand-400: #2dd4bf;
+  --color-brand-500: #0f766e;
+  --color-brand-600: #115e59;
+  --color-brand-700: #134e4a;
+  --color-brand-800: #0f3f3c;
+  --color-brand-900: #0b302e;
+  --color-brand-950: #042f2e;
+}
+
+:root {
+  /*
+   * 角丸の基準値。Nuxt UI のボタン・入力欄・セレクトは rounded-md（= --ui-radius × 1.5）を使うので、
+   * ここを 4px ÷ 1.5 にすると、全画面のボタンと入力欄の角丸が 4px にそろう。
+   */
+  --ui-radius: calc(0.25rem / 1.5);
+}
+
+body {
+  font-variant-numeric: tabular-nums;
+}

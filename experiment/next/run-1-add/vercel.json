@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/detect-missing-clock-outs",
+      "schedule": "0 15 * * *"
+    }
+  ]
+}
