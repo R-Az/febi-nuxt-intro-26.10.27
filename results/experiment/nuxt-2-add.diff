@@ -1,0 +1,1503 @@
+diff --git a/README.md b/README.md
+index 149418e..5b845e3 100644
+--- a/README.md
++++ b/README.md
+@@ -27,14 +27,18 @@ NUXT_SESSION_PASSWORD=32文字以上のランダムな文字列 node .output/ser
+ 
+ 本番ビルドでは `.env` が自動生成されないので、`NUXT_SESSION_PASSWORD` を必ず設定してください。
+ 
+-## テストと型チェック
++## テスト・型チェック・Lint
+ 
+ ```bash
+ npm test            # 単体テスト（Vitest）
+ npm run typecheck   # 型チェック（vue-tsc）
++npm run lint        # Lint（ESLint）
++npm run lint:fix    # Lint で自動修正できるものを直す
+ npm run build       # 本番ビルド
+ ```
+ 
++Lint は Nuxt 公式の `@nuxt/eslint` モジュールで設定しています。ルールは Nuxt の推奨設定に、書き方のルール（`stylistic`：セミコロンなし、シングルクォート、2スペース）を加えたものです。設定は `nuxt.config.ts` の `eslint` と `eslint.config.mjs` にあります。`eslint.config.mjs` は `.nuxt/eslint.config.mjs` を読み込むので、`npm install`（`nuxt prepare`）を済ませてから実行してください。
++
+ 単体テストは `tests/` にあります。勤怠の計算ルール（実働・残業・打刻漏れ・月の合計）、打刻の状態遷移、管理者の修正内容の検査、日本時間の日付計算を確かめています。
+ 
+ ## ログイン用のアカウント
+@@ -104,10 +108,38 @@ Nitro のスケジューラはサーバーのローカル時刻で動きます
+ 
+ この仕組みは、Node.js サーバーとして常に動かす場合（`npm run dev`、`node .output/server/index.mjs`）に動きます。サーバーレス環境に置くときは、デプロイ先のスケジューラ（Cloudflare Cron Triggers など）から同じタスクを呼ぶ設定が別に必要です。
+ 
++## 画面の見た目（Nuxt UI）
++
++画面の部品（ボタン、入力欄、テーブル、モーダルなど）には、Nuxt 公式の UI ライブラリ [Nuxt UI](https://ui.nuxt.com) を使っています。ヘッダー右上（ログイン画面では右上）のボタンで、ライトモードとダークモードを切り替えられます。最初は OS の設定に合わせて表示し、切り替えた結果はブラウザに保存します。
++
++見た目の調整は、部品ごとではなく次の2つのファイルでまとめて設定しています。
++
++| 設定 | 内容 | 場所 |
++| --- | --- | --- |
++| 主色 | 会社のブランドカラー #0F766E。ダークモードでは、暗い背景で読みやすい明るい色（#2DD4BF）に切り替える | `app/assets/main.css` の `--color-brand-*` と、`app/app.config.ts` の `ui.colors.primary` |
++| 角丸 | ボタンと入力欄の角丸を 4px にそろえる | `app/assets/main.css` の `--ui-radius` |
++| 書体 | 本文を Noto Sans JP にする。フォントはビルド時に取得し、アプリのサーバーから配信する | `app/assets/main.css` の `--font-sans` |
++| テーブル | セルの上下の余白を詰めて、1画面に多くの行を表示する | `app/app.config.ts` の `ui.table` |
++| 押せないボタン | 押せないボタンを薄く表示して、押せるボタンと見分けやすくする | `app/app.config.ts` の `ui.button` |
++
++アイコンは Lucide（`@iconify-json/lucide`）を使い、アプリに同梱しています。
++
++## アクセス解析（Google Analytics）
++
++Google Analytics（測定ID：`G-XXXXXXXXXX`）で利用状況を計測します。読み込みには `nuxt-gtag` モジュールを使っています。
++
++- 初めて開いたときは、画面の下に同意を求めるバナーを出します。「同意する」を押すまで、Google Analytics のスクリプト（gtag.js）を読み込まず、計測も送りません。
++- 「同意する」を押すと、その場で gtag.js を読み込み、計測を始めます。「同意しない」を押した場合は何も送りません。どちらを選んだかは Cookie `analytics_consent` に1年間保存し、次からはバナーを出しません。
++- 同意済みの人が画面を開いたときは、最初の画面の表示が終わり、ブラウザの手が空いてから gtag.js を読み込みます（`app/plugins/analytics.client.ts`）。
++- 打刻すると、イベント `punch` を送ります。パラメータ `punch_type` に種類（`clock_in` 出勤、`break_start` 休憩開始、`break_end` 休憩終了、`clock_out` 退勤）を、`punch_label` に日本語の名前を入れます。
++- 画面の移動による page_view は、GA4 の拡張計測機能（ブラウザの履歴イベントによるページ変更）で記録します。GA4 の管理画面でこの設定を有効にしてください。
++
++同意の状態と送信の処理は `app/composables/useAnalytics.ts`、バナーは `app/components/AnalyticsConsentBanner.vue` にあります。同意を取り消したいときは、ブラウザで Cookie `analytics_consent` を削除してください（画面からの取り消しはまだできません）。
++
+ ## ディレクトリ構成
+ 
+ ```
+-app/                 画面（pages, layouts, components, middleware）
++app/                 画面（pages, layouts, components, composables, plugins, middleware）とテーマ設定（app.config.ts）
+ server/api/          API
+ server/middleware/   API 全体の認証チェック
+ server/utils/        モックのデータ層（mock-db.ts, repository.ts）と業務ロジック
+diff --git a/app/app.config.ts b/app/app.config.ts
+new file mode 100644
+index 0000000..f1ed945
+--- /dev/null
++++ b/app/app.config.ts
+@@ -0,0 +1,24 @@
++// Nuxt UI のテーマ設定。ここに書いた内容が全画面の部品に効く。
++// 色の値と角丸・書体は app/assets/main.css の @theme / :root で定義している。
++export default defineAppConfig({
++  ui: {
++    colors: {
++      // 会社のブランドカラー（#0F766E）。パレットは main.css の --color-brand-*
++      primary: 'brand',
++      neutral: 'slate',
++    },
++    // 押せないボタンをはっきり薄くする（初期値の 75% だと、打刻画面で押せるボタンと見分けにくい）
++    button: {
++      slots: {
++        base: 'disabled:opacity-40 aria-disabled:opacity-40',
++      },
++    },
++    // 一覧で1画面に多くの行を出せるよう、テーブルのセルの余白を詰める
++    table: {
++      slots: {
++        th: 'px-3 py-2 whitespace-nowrap',
++        td: 'px-3 py-1.5',
++      },
++    },
++  },
++})
+diff --git a/app/app.vue b/app/app.vue
+index f8eacfa..32ab912 100644
+--- a/app/app.vue
++++ b/app/app.vue
+@@ -1,5 +1,12 @@
++<script setup lang="ts">
++import { ja } from '@nuxt/ui/locale'
++</script>
++
+ <template>
+-  <NuxtLayout>
+-    <NuxtPage />
+-  </NuxtLayout>
++  <UApp :locale="ja">
++    <NuxtLayout>
++      <NuxtPage />
++    </NuxtLayout>
++    <AnalyticsConsentBanner />
++  </UApp>
+ </template>
+diff --git a/app/assets/main.css b/app/assets/main.css
+index 615abbb..e83e879 100644
+--- a/app/assets/main.css
++++ b/app/assets/main.css
+@@ -1,129 +1,35 @@
+-:root {
+-  --bg: #f5f6f8;
+-  --surface: #ffffff;
+-  --text: #1f2933;
+-  --muted: #6b7280;
+-  --border: #dde1e6;
+-  --primary: #2457c5;
+-  --primary-hover: #1c469f;
+-  --danger-bg: #fdecec;
+-  --danger: #b42318;
+-  --success-bg: #e7f6ec;
+-  --success: #1b7a3d;
+-  --warn-bg: #fff4e0;
+-  --warn: #9a5b00;
+-  --radius: 8px;
+-  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
+-  color: var(--text);
+-  background: var(--bg);
++@import "tailwindcss";
++@import "@nuxt/ui";
++
++@theme static {
++  /* 本文の書体。@nuxt/fonts（Nuxt UI に同梱）が Google Fonts から取得して自前で配信する */
++  --font-sans: 'Noto Sans JP', sans-serif;
++
++  /*
++   * ブランドカラーのパレット。Nuxt UI は主色に、ライトモードでは 500、ダークモードでは 400 を使う。
++   * 500 を会社のブランドカラー #0F766E にし、400 はダークモードの暗い背景でも読める明るさにしている。
++   */
++  --color-brand-50: #f0fdfa;
++  --color-brand-100: #ccfbf1;
++  --color-brand-200: #99f6e4;
++  --color-brand-300: #5eead4;
++  --color-brand-400: #2dd4bf;
++  --color-brand-500: #0f766e;
++  --color-brand-600: #115e59;
++  --color-brand-700: #134e4a;
++  --color-brand-800: #0f3f3c;
++  --color-brand-900: #0b302e;
++  --color-brand-950: #042f2e;
+ }
+ 
+-* { box-sizing: border-box; }
+-body { margin: 0; background: var(--bg); font-size: 15px; line-height: 1.6; }
+-h1 { font-size: 1.5rem; margin: 0 0 16px; }
+-h1 small { font-size: 0.9rem; font-weight: normal; color: var(--muted); margin-left: 8px; }
+-h2 { font-size: 1.1rem; margin: 0 0 12px; }
+-a { color: var(--primary); }
+-p { margin: 0 0 12px; }
+-
+-.header { background: var(--surface); border-bottom: 1px solid var(--border); }
+-.header-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 56px; display: flex; align-items: center; gap: 32px; }
+-.brand { font-weight: bold; font-size: 1.1rem; color: var(--text); text-decoration: none; }
+-.nav { display: flex; gap: 4px; flex: 1; }
+-.nav-link { padding: 6px 12px; border-radius: 6px; color: var(--text); text-decoration: none; }
+-.nav-link:hover { background: var(--bg); }
+-.nav-link.active { background: #e8eefb; color: var(--primary); font-weight: bold; }
+-.user { display: flex; align-items: center; gap: 12px; }
+-.user small { color: var(--muted); }
+-
+-.main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+-.blank { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+-.page { display: flex; flex-direction: column; gap: 16px; }
+-.page > * { margin: 0; }
+-.page-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+-.page-header h1 { margin: 0; }
+-
+-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; }
+-.muted { color: var(--muted); }
+-.small { font-size: 0.85rem; }
+-
+-.btn {
+-  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+-  padding: 7px 14px; border: 1px solid var(--border); border-radius: 6px;
+-  background: var(--surface); color: var(--text); font: inherit; cursor: pointer; text-decoration: none;
++:root {
++  /*
++   * 角丸の基準値。Nuxt UI のボタン・入力欄・セレクトは rounded-md（= --ui-radius × 1.5）を使うので、
++   * ここを 4px ÷ 1.5 にすると、全画面のボタンと入力欄の角丸が 4px にそろう。
++   */
++  --ui-radius: calc(0.25rem / 1.5);
+ }
+-.btn:hover:not(:disabled) { background: var(--bg); }
+-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+-.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+-.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+-.btn-ghost { border-color: transparent; background: transparent; }
+-.btn-small { padding: 3px 10px; font-size: 0.85rem; }
+-
+-.form { display: flex; flex-direction: column; gap: 14px; }
+-.form-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+-.field { display: flex; flex-direction: column; gap: 4px; }
+-.field > span { font-size: 0.85rem; color: var(--muted); }
+-input, select { font: inherit; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); }
+-.form select { max-width: 320px; }
+-.form + .small { margin: 16px 0 0; }
+-input:focus, select:focus { outline: 2px solid #b8cbf2; border-color: var(--primary); }
+-
+-.alert { padding: 10px 14px; border-radius: 6px; margin: 0; }
+-.alert p { margin: 0; }
+-.alert-error { background: var(--danger-bg); color: var(--danger); }
+-.alert-success { background: var(--success-bg); color: var(--success); }
+ 
+-.badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.8rem; }
+-.badge-warn { background: var(--warn-bg); color: var(--warn); font-weight: bold; }
+-.badge-info { background: #e8eefb; color: var(--primary); }
+-.badge-ok { background: var(--success-bg); color: var(--success); }
+-
+-.login-card { width: 100%; max-width: 380px; }
+-.login-card h1 { text-align: center; }
+-
+-.month-picker { display: flex; gap: 8px; align-items: center; }
+-
+-.totals { display: flex; gap: 12px; margin: 0; flex-wrap: wrap; }
+-.totals > div { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 18px; min-width: 140px; }
+-.totals dt { font-size: 0.8rem; color: var(--muted); }
+-.totals dd { margin: 0; font-size: 1.3rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+-.totals .warn dd { color: var(--warn); }
+-
+-.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; }
+-.table-wrap > .muted { padding: 16px; margin: 0; }
+-.table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+-.table th, .table td { padding: 7px 12px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+-.table thead th { background: #f0f2f5; font-size: 0.85rem; color: var(--muted); font-weight: normal; }
+-.table tfoot th, .table tfoot td { background: #f0f2f5; font-weight: bold; border-bottom: none; }
+-.table .num { text-align: right; }
+-.table .actions { text-align: right; width: 1%; }
+-.table tr.weekend td { color: var(--muted); background: #fafbfc; }
+-.table tr.missing td { background: var(--warn-bg); }
+-.loading { opacity: 0.6; }
+-
+-.punch-card { display: flex; flex-direction: column; gap: 20px; align-items: center; padding: 32px; }
+-.clock { text-align: center; }
+-.clock-date { color: var(--muted); }
+-.clock-time { font-size: 3.2rem; font-weight: bold; font-variant-numeric: tabular-nums; line-height: 1.2; }
+-.clock-time small { font-size: 1.4rem; color: var(--muted); }
+-.state { display: inline-block; margin-top: 6px; padding: 2px 14px; border-radius: 999px; background: var(--bg); font-weight: bold; }
+-.state-working { background: #e8eefb; color: var(--primary); }
+-.state-onBreak { background: var(--warn-bg); color: var(--warn); }
+-.state-finished { background: var(--success-bg); color: var(--success); }
+-.punch-buttons { display: grid; grid-template-columns: repeat(4, 140px); gap: 12px; }
+-.btn-punch { height: 64px; font-size: 1.1rem; font-weight: bold; }
+-.punch-clockIn:not(:disabled) { background: var(--primary); border-color: var(--primary); color: #fff; }
+-.punch-clockOut:not(:disabled) { background: #374151; border-color: #374151; color: #fff; }
+-
+-.record { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 0; }
+-.record dt { font-size: 0.8rem; color: var(--muted); }
+-.record dd { margin: 0; font-weight: bold; }
+-.break-item { display: block; }
+-
+-.modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 10; }
+-.modal { width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+-.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+-.breaks { border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin: 0; }
+-.breaks legend { font-size: 0.85rem; color: var(--muted); padding: 0 4px; }
+-.breaks .muted { margin: 0; }
+-.break-no { font-size: 0.85rem; color: var(--muted); min-width: 3.5em; }
++body {
++  font-variant-numeric: tabular-nums;
++}
+diff --git a/app/components/AnalyticsConsentBanner.vue b/app/components/AnalyticsConsentBanner.vue
+new file mode 100644
+index 0000000..e9fc90a
+--- /dev/null
++++ b/app/components/AnalyticsConsentBanner.vue
+@@ -0,0 +1,24 @@
++<script setup lang="ts">
++const { consent, grant, deny } = useAnalytics()
++</script>
++
++<template>
++  <div
++    v-if="consent === null"
++    class="fixed inset-x-0 bottom-0 z-50 p-4"
++    role="region"
++    aria-label="アクセス解析への同意"
++  >
++    <UCard class="mx-auto max-w-3xl shadow-lg">
++      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
++        <p class="flex-1 text-sm">
++          サービス改善のため、Google Analytics で利用状況（表示した画面や打刻の操作）を計測します。同意いただいた場合だけ計測します。
++        </p>
++        <div class="flex shrink-0 gap-2">
++          <UButton color="neutral" variant="outline" label="同意しない" @click="deny" />
++          <UButton label="同意する" @click="grant" />
++        </div>
++      </div>
++    </UCard>
++  </div>
++</template>
+diff --git a/app/components/AttendanceTable.vue b/app/components/AttendanceTable.vue
+index 22f81cb..6b2bb8f 100644
+--- a/app/components/AttendanceTable.vue
++++ b/app/components/AttendanceTable.vue
+@@ -1,63 +1,76 @@
+ <script setup lang="ts">
++import type { TableColumn } from '@nuxt/ui'
+ import type { DailyRow, MonthTotals } from '#shared/types/attendance'
+ 
+-defineProps<{
++const props = defineProps<{
+   days: DailyRow[]
+   totals: MonthTotals
+   editable?: boolean
++  loading?: boolean
+ }>()
+ defineEmits<{ edit: [row: DailyRow] }>()
+ 
++const num = { class: { th: 'text-end', td: 'text-end' } }
++
++const columns = computed<TableColumn<DailyRow>[]>(() => [
++  { id: 'date', header: '日付', footer: '合計' },
++  { id: 'clockIn', header: '出勤', footer: () => `出勤 ${props.totals.workDays}日` },
++  { id: 'clockOut', header: '退勤', footer: () => `打刻漏れ ${props.totals.missingCount}件` },
++  { id: 'break', header: '休憩', meta: num },
++  { id: 'work', header: '実働', meta: num, footer: () => formatDuration(props.totals.workMinutes) },
++  { id: 'overtime', header: '残業', meta: num, footer: () => formatDuration(props.totals.overtimeMinutes) },
++  { id: 'note', header: '備考' },
++  ...(props.editable ? [{ id: 'actions', meta: num }] : []),
++])
++
++function rowClass(row: { original: DailyRow }): string {
++  if (row.original.missingClockOut) return 'bg-warning/10'
++  const w = dayOfWeek(row.original.date)
++  return w === 0 || w === 6 ? 'bg-elevated/50 [&>td]:text-dimmed' : ''
++}
++
+ function breakTitle(row: DailyRow): string {
+   return row.breaks.map(b => `${b.start}〜${b.end ?? ''}`).join('\n')
+ }
+ </script>
+ 
+ <template>
+-  <div class="table-wrap">
+-    <table class="table">
+-      <thead>
+-        <tr>
+-          <th>日付</th>
+-          <th>出勤</th>
+-          <th>退勤</th>
+-          <th class="num">休憩</th>
+-          <th class="num">実働</th>
+-          <th class="num">残業</th>
+-          <th>備考</th>
+-          <th v-if="editable" />
+-        </tr>
+-      </thead>
+-      <tbody>
+-        <tr
+-          v-for="row in days"
+-          :key="row.date"
+-          :class="{ weekend: dayOfWeek(row.date) === 0 || dayOfWeek(row.date) === 6, missing: row.missingClockOut }"
+-        >
+-          <td>{{ formatDateLabel(row.date) }}</td>
+-          <td>{{ row.clockIn ?? '' }}</td>
+-          <td>{{ row.clockOut ?? '' }}</td>
+-          <td class="num" :title="breakTitle(row)">{{ row.hasRecord ? formatDuration(row.breakMinutes) : '' }}</td>
+-          <td class="num">{{ formatDuration(row.workMinutes) }}</td>
+-          <td class="num">{{ formatDuration(row.overtimeMinutes) }}</td>
+-          <td>
+-            <span v-if="row.missingClockOut" class="badge badge-warn">打刻漏れ</span>
+-            <span v-else-if="row.inProgress" class="badge badge-info">勤務中</span>
+-          </td>
+-          <td v-if="editable" class="actions">
+-            <button type="button" class="btn btn-small" @click="$emit('edit', row)">修正</button>
+-          </td>
+-        </tr>
+-      </tbody>
+-      <tfoot>
+-        <tr>
+-          <th>合計</th>
+-          <td colspan="3">出勤 {{ totals.workDays }}日 / 打刻漏れ {{ totals.missingCount }}件</td>
+-          <td class="num">{{ formatDuration(totals.workMinutes) }}</td>
+-          <td class="num">{{ formatDuration(totals.overtimeMinutes) }}</td>
+-          <td :colspan="editable ? 2 : 1" />
+-        </tr>
+-      </tfoot>
+-    </table>
+-  </div>
++  <UCard :ui="{ body: 'p-0 sm:p-0' }">
++    <UTable
++      :data="days"
++      :columns="columns"
++      :loading="loading"
++      :meta="{ class: { tr: rowClass } }"
++    >
++      <template #date-cell="{ row }">
++        {{ formatDateLabel(row.original.date) }}
++      </template>
++      <template #clockIn-cell="{ row }">
++        {{ row.original.clockIn ?? '' }}
++      </template>
++      <template #clockOut-cell="{ row }">
++        {{ row.original.clockOut ?? '' }}
++      </template>
++      <template #break-cell="{ row }">
++        <span :title="breakTitle(row.original)">{{ row.original.hasRecord ? formatDuration(row.original.breakMinutes) : '' }}</span>
++      </template>
++      <template #work-cell="{ row }">
++        {{ formatDuration(row.original.workMinutes) }}
++      </template>
++      <template #overtime-cell="{ row }">
++        {{ formatDuration(row.original.overtimeMinutes) }}
++      </template>
++      <template #note-cell="{ row }">
++        <UBadge v-if="row.original.missingClockOut" color="warning" variant="subtle" label="打刻漏れ" />
++        <UBadge v-else-if="row.original.inProgress" color="primary" variant="subtle" label="勤務中" />
++      </template>
++      <!-- 見出しが空文字だとハイドレーションがずれるので、読み上げ用の見出しを置く -->
++      <template #actions-header>
++        <span class="sr-only">操作</span>
++      </template>
++      <template #actions-cell="{ row }">
++        <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-pencil" label="修正" @click="$emit('edit', row.original)" />
++      </template>
++    </UTable>
++  </UCard>
+ </template>
+diff --git a/app/components/EditAttendanceDialog.vue b/app/components/EditAttendanceDialog.vue
+index d954a57..7c3094a 100644
+--- a/app/components/EditAttendanceDialog.vue
++++ b/app/components/EditAttendanceDialog.vue
+@@ -31,52 +31,52 @@ async function save() {
+     saving.value = false
+   }
+ }
+-
+-function onKeydown(e: KeyboardEvent) {
+-  if (e.key === 'Escape') emit('close')
+-}
+-onMounted(() => window.addEventListener('keydown', onKeydown))
+-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+ </script>
+ 
+ <template>
+-  <div class="modal-backdrop" @click.self="emit('close')">
+-    <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+-      <h2 id="edit-title">{{ formatDateLabel(row.date) }} の勤怠を修正</h2>
+-      <form class="form" @submit.prevent="save">
+-        <div class="form-row">
+-          <label class="field">
+-            <span>出勤</span>
+-            <input v-model="clockIn" type="time">
+-          </label>
+-          <label class="field">
+-            <span>退勤</span>
+-            <input v-model="clockOut" type="time">
+-          </label>
++  <!-- 開閉は親の v-if で行う。Esc・外側クリック・× で閉じると close を出す -->
++  <UModal
++    :open="true"
++    :title="`${formatDateLabel(row.date)} の勤怠を修正`"
++    @update:open="open => { if (!open) emit('close') }"
++  >
++    <template #body>
++      <form class="flex flex-col gap-4" @submit.prevent="save">
++        <div class="grid grid-cols-2 gap-3">
++          <UFormField label="出勤">
++            <UInput v-model="clockIn" type="time" class="w-full" />
++          </UFormField>
++          <UFormField label="退勤">
++            <UInput v-model="clockOut" type="time" class="w-full" />
++          </UFormField>
+         </div>
+ 
+-        <fieldset class="breaks">
+-          <legend>休憩</legend>
+-          <p v-if="breaks.length === 0" class="muted">休憩はありません。</p>
+-          <div v-for="(b, i) in breaks" :key="i" class="form-row break-row">
+-            <span class="break-no">休憩{{ i + 1 }}</span>
+-            <input v-model="b.start" type="time" :aria-label="`休憩${i + 1} 開始`" required>
++        <fieldset class="flex flex-col items-start gap-2 rounded-md border border-default p-3">
++          <legend class="px-1 text-sm text-muted">
++            休憩
++          </legend>
++          <p v-if="breaks.length === 0" class="text-sm text-muted">
++            休憩はありません。
++          </p>
++          <div v-for="(b, i) in breaks" :key="i" class="flex flex-wrap items-center gap-2">
++            <span class="min-w-14 text-sm text-muted">休憩{{ i + 1 }}</span>
++            <UInput v-model="b.start" type="time" :aria-label="`休憩${i + 1} 開始`" required />
+             <span>〜</span>
+-            <input v-model="b.end" type="time" :aria-label="`休憩${i + 1} 終了`" required>
+-            <button type="button" class="btn btn-small btn-ghost" @click="breaks.splice(i, 1)">削除</button>
++            <UInput v-model="b.end" type="time" :aria-label="`休憩${i + 1} 終了`" required />
++            <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-trash-2" label="削除" @click="breaks.splice(i, 1)" />
+           </div>
+-          <button type="button" class="btn btn-small" @click="addBreak">＋ 休憩を追加</button>
++          <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-plus" label="休憩を追加" @click="addBreak" />
+         </fieldset>
+ 
+-        <p class="muted small">
++        <p class="text-sm text-muted">
+           退勤を空にすると「打刻漏れ」のままになります。出勤・退勤・休憩をすべて空にして保存すると、その日の記録を削除します。
+         </p>
+         <ErrorList :messages="errors" />
+-        <div class="modal-actions">
+-          <button type="button" class="btn" @click="emit('close')">キャンセル</button>
+-          <button type="submit" class="btn btn-primary" :disabled="saving">{{ saving ? '保存中…' : '保存' }}</button>
++        <div class="flex justify-end gap-2">
++          <UButton color="neutral" variant="outline" label="キャンセル" @click="emit('close')" />
++          <UButton type="submit" :loading="saving" :label="saving ? '保存中…' : '保存'" />
+         </div>
+       </form>
+-    </div>
+-  </div>
++    </template>
++  </UModal>
+ </template>
+diff --git a/app/components/ErrorList.vue b/app/components/ErrorList.vue
+index f1da7d4..4d04a1e 100644
+--- a/app/components/ErrorList.vue
++++ b/app/components/ErrorList.vue
+@@ -3,7 +3,17 @@ defineProps<{ messages: string[] }>()
+ </script>
+ 
+ <template>
+-  <div v-if="messages.length > 0" class="alert alert-error" role="alert">
+-    <p v-for="m in messages" :key="m">{{ m }}</p>
+-  </div>
++  <UAlert
++    v-if="messages.length > 0"
++    color="error"
++    variant="subtle"
++    icon="i-lucide-circle-alert"
++    role="alert"
++  >
++    <template #description>
++      <p v-for="m in messages" :key="m">
++        {{ m }}
++      </p>
++    </template>
++  </UAlert>
+ </template>
+diff --git a/app/components/MonthPicker.vue b/app/components/MonthPicker.vue
+index 7e10b2a..a84aa14 100644
+--- a/app/components/MonthPicker.vue
++++ b/app/components/MonthPicker.vue
+@@ -3,9 +3,9 @@ const month = defineModel<string>({ required: true })
+ </script>
+ 
+ <template>
+-  <div class="month-picker">
+-    <button type="button" class="btn" aria-label="前の月" @click="month = addMonths(month, -1)">‹ 前月</button>
+-    <input v-model="month" type="month" aria-label="表示する月" required>
+-    <button type="button" class="btn" aria-label="次の月" @click="month = addMonths(month, 1)">翌月 ›</button>
+-  </div>
++  <UFieldGroup>
++    <UButton color="neutral" variant="outline" icon="i-lucide-chevron-left" label="前月" aria-label="前の月" @click="month = addMonths(month, -1)" />
++    <UInput v-model="month" type="month" aria-label="表示する月" required />
++    <UButton color="neutral" variant="outline" trailing-icon="i-lucide-chevron-right" label="翌月" aria-label="次の月" @click="month = addMonths(month, 1)" />
++  </UFieldGroup>
+ </template>
+diff --git a/app/components/MonthTotalsBar.vue b/app/components/MonthTotalsBar.vue
+index 3d86fba..d991f8c 100644
+--- a/app/components/MonthTotalsBar.vue
++++ b/app/components/MonthTotalsBar.vue
+@@ -1,14 +1,25 @@
+ <script setup lang="ts">
+ import type { MonthTotals } from '#shared/types/attendance'
+ 
+-defineProps<{ totals: MonthTotals }>()
++const props = defineProps<{ totals: MonthTotals }>()
++
++const items = computed(() => [
++  { label: '出勤日数', value: `${props.totals.workDays}日`, warn: false },
++  { label: '実働時間', value: formatDuration(props.totals.workMinutes), warn: false },
++  { label: '残業時間', value: formatDuration(props.totals.overtimeMinutes), warn: false },
++  { label: '打刻漏れ', value: `${props.totals.missingCount}件`, warn: props.totals.missingCount > 0 },
++])
+ </script>
+ 
+ <template>
+-  <dl class="totals">
+-    <div><dt>出勤日数</dt><dd>{{ totals.workDays }}日</dd></div>
+-    <div><dt>実働時間</dt><dd>{{ formatDuration(totals.workMinutes) }}</dd></div>
+-    <div><dt>残業時間</dt><dd>{{ formatDuration(totals.overtimeMinutes) }}</dd></div>
+-    <div :class="{ warn: totals.missingCount > 0 }"><dt>打刻漏れ</dt><dd>{{ totals.missingCount }}件</dd></div>
++  <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
++    <UCard v-for="item in items" :key="item.label" :ui="{ body: 'p-3 sm:p-4' }">
++      <dt class="text-xs text-muted">
++        {{ item.label }}
++      </dt>
++      <dd class="text-xl font-bold" :class="{ 'text-warning': item.warn }">
++        {{ item.value }}
++      </dd>
++    </UCard>
+   </dl>
+ </template>
+diff --git a/app/composables/useAnalytics.ts b/app/composables/useAnalytics.ts
+new file mode 100644
+index 0000000..6c9967f
+--- /dev/null
++++ b/app/composables/useAnalytics.ts
+@@ -0,0 +1,59 @@
++import type { PunchAction } from '#shared/types/attendance'
++
++export type AnalyticsConsent = 'granted' | 'denied'
++
++const CONSENT_COOKIE = 'analytics_consent'
++const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365
++
++/** GA に送る打刻の種類。GA の慣習に合わせて snake_case にする */
++const PUNCH_TYPES: Record<PunchAction, string> = {
++  clockIn: 'clock_in',
++  breakStart: 'break_start',
++  breakEnd: 'break_end',
++  clockOut: 'clock_out',
++}
++
++/**
++ * Google Analytics の同意状態と送信。
++ * 同意は Cookie に保存する（サーバー側でも読めるので、同意済みの人にバナーが一瞬出ることがない）。
++ * 同意するまでは gtag.js を読み込まず、イベントも送らない。
++ */
++export function useAnalytics() {
++  const cookie = useCookie<AnalyticsConsent | null>(CONSENT_COOKIE, {
++    default: () => null,
++    maxAge: ONE_YEAR_SECONDS,
++    sameSite: 'lax',
++  })
++  const consent = useState<AnalyticsConsent | null>('analytics-consent', () => cookie.value)
++  const { gtag, initialize } = useGtag()
++  const nuxtApp = useNuxtApp()
++
++  /** 同意済みなら gtag.js を読み込んで計測を始める（2回目以降は何もしない） */
++  function start() {
++    if (consent.value !== 'granted') return
++    // initialize は内部で useHead を呼ぶので、Nuxt のコンテキスト内で実行する
++    nuxtApp.runWithContext(() => initialize())
++  }
++
++  function grant() {
++    cookie.value = 'granted'
++    consent.value = 'granted'
++    start()
++  }
++
++  function deny() {
++    cookie.value = 'denied'
++    consent.value = 'denied'
++  }
++
++  function trackPunch(action: PunchAction) {
++    // 同意前に gtag() を呼ぶと dataLayer に溜まり、同意後にまとめて送られてしまうので呼ばない
++    if (consent.value !== 'granted') return
++    gtag('event', 'punch', {
++      punch_type: PUNCH_TYPES[action],
++      punch_label: PUNCH_ACTION_LABELS[action],
++    })
++  }
++
++  return { consent: readonly(consent), grant, deny, start, trackPunch }
++}
+diff --git a/app/layouts/blank.vue b/app/layouts/blank.vue
+index 0a35927..9d008d2 100644
+--- a/app/layouts/blank.vue
++++ b/app/layouts/blank.vue
+@@ -1,5 +1,6 @@
+ <template>
+-  <main class="blank">
++  <UMain class="relative flex items-center justify-center p-6">
++    <UColorModeButton class="absolute top-4 right-4" />
+     <slot />
+-  </main>
++  </UMain>
+ </template>
+diff --git a/app/layouts/default.vue b/app/layouts/default.vue
+index 5eb8c7f..811cd38 100644
+--- a/app/layouts/default.vue
++++ b/app/layouts/default.vue
+@@ -1,15 +1,17 @@
+ <script setup lang="ts">
++import type { NavigationMenuItem } from '@nuxt/ui'
++
+ const { user, clear } = useUserSession()
+ 
+-const links = computed(() => user.value?.role === 'admin'
++const links = computed<NavigationMenuItem[]>(() => user.value?.role === 'admin'
+   ? [
+-      { to: '/admin', label: '月次一覧' },
+-      { to: '/admin/missing-punches', label: '打刻漏れ' },
+-      { to: '/admin/export', label: 'CSV出力' },
++      { to: '/admin', label: '月次一覧', icon: 'i-lucide-table', exact: true },
++      { to: '/admin/missing-punches', label: '打刻漏れ', icon: 'i-lucide-alert-triangle', exact: true },
++      { to: '/admin/export', label: 'CSV出力', icon: 'i-lucide-download', exact: true },
+     ]
+   : [
+-      { to: '/punch', label: '打刻' },
+-      { to: '/attendance', label: '勤怠一覧' },
++      { to: '/punch', label: '打刻', icon: 'i-lucide-clock', exact: true },
++      { to: '/attendance', label: '勤怠一覧', icon: 'i-lucide-calendar', exact: true },
+     ])
+ 
+ async function logout() {
+@@ -19,23 +21,27 @@ async function logout() {
+ </script>
+ 
+ <template>
+-  <div class="layout">
+-    <header class="header">
+-      <div class="header-inner">
+-        <NuxtLink :to="homePath(user?.role)" class="brand">勤怠管理</NuxtLink>
+-        <nav class="nav">
+-          <NuxtLink v-for="link in links" :key="link.to" :to="link.to" class="nav-link" :exact-active-class="'active'">
+-            {{ link.label }}
+-          </NuxtLink>
+-        </nav>
+-        <div class="user">
+-          <span>{{ user?.name }}<small v-if="user?.role === 'admin'">（管理者）</small></span>
+-          <button type="button" class="btn btn-ghost" @click="logout">ログアウト</button>
+-        </div>
+-      </div>
+-    </header>
+-    <main class="main">
+-      <slot />
+-    </main>
++  <div>
++    <UHeader :to="homePath(user?.role)" title="勤怠管理">
++      <UNavigationMenu :items="links" />
++
++      <template #right>
++        <span class="hidden text-sm sm:inline">
++          {{ user?.name }}<span v-if="user?.role === 'admin'" class="text-muted">（管理者）</span>
++        </span>
++        <UColorModeButton />
++        <UButton color="neutral" variant="ghost" icon="i-lucide-log-out" label="ログアウト" :ui="{ label: 'hidden sm:inline' }" aria-label="ログアウト" @click="logout" />
++      </template>
++
++      <template #body>
++        <UNavigationMenu :items="links" orientation="vertical" class="-mx-2.5" />
++      </template>
++    </UHeader>
++
++    <UMain>
++      <UContainer class="py-6">
++        <slot />
++      </UContainer>
++    </UMain>
+   </div>
+ </template>
+diff --git a/app/pages/admin/employees/[id].vue b/app/pages/admin/employees/[id].vue
+index 27e01b9..7fdee51 100644
+--- a/app/pages/admin/employees/[id].vue
++++ b/app/pages/admin/employees/[id].vue
+@@ -5,7 +5,7 @@ const route = useRoute()
+ const userId = computed(() => String(route.params.id))
+ const month = useMonthQuery()
+ 
+-const { data, error, refresh } = await useFetch(() => `/api/users/${userId.value}/attendance`, {
++const { data, error, refresh, status } = await useFetch(() => `/api/users/${userId.value}/attendance`, {
+   query: { month },
+ })
+ 
+@@ -14,6 +14,11 @@ useHead({ title: () => `${data.value?.user.name ?? '従業員'}の勤怠 | 勤
+ const editing = ref<DailyRow | null>(null)
+ const savedMessage = ref('')
+ 
++function startEdit(row: DailyRow) {
++  savedMessage.value = ''
++  editing.value = row
++}
++
+ async function onSaved(date: string) {
+   editing.value = null
+   savedMessage.value = `${formatDateLabel(date)} の勤怠を保存しました。`
+@@ -22,20 +27,22 @@ async function onSaved(date: string) {
+ </script>
+ 
+ <template>
+-  <div class="page">
+-    <p><NuxtLink :to="{ path: '/admin', query: { month } }">‹ 月次一覧へ戻る</NuxtLink></p>
+-    <div class="page-header">
+-      <h1>
++  <div class="flex flex-col gap-4">
++    <div>
++      <UButton :to="{ path: '/admin', query: { month } }" variant="link" icon="i-lucide-chevron-left" label="月次一覧へ戻る" class="px-0" />
++    </div>
++    <div class="flex flex-wrap items-center justify-between gap-3">
++      <h1 class="text-2xl font-bold">
+         {{ data?.user.name }} の勤怠
+-        <small v-if="data">{{ data.user.id }} / {{ formatMonthLabel(data.month) }}</small>
++        <small v-if="data" class="ml-2 text-sm font-normal text-muted">{{ data.user.id }} / {{ formatMonthLabel(data.month) }}</small>
+       </h1>
+       <MonthPicker v-model="month" />
+     </div>
+     <ErrorList v-if="error" :messages="errorMessages(error)" />
+-    <p v-if="savedMessage" class="alert alert-success" role="status">{{ savedMessage }}</p>
++    <UAlert v-if="savedMessage" color="success" variant="subtle" icon="i-lucide-circle-check" :title="savedMessage" role="status" />
+     <template v-if="data">
+       <MonthTotalsBar :totals="data.totals" />
+-      <AttendanceTable :days="data.days" :totals="data.totals" editable @edit="row => { savedMessage = ''; editing = row }" />
++      <AttendanceTable :days="data.days" :totals="data.totals" :loading="status === 'pending'" editable @edit="startEdit" />
+     </template>
+     <EditAttendanceDialog
+       v-if="editing"
+diff --git a/app/pages/admin/export.vue b/app/pages/admin/export.vue
+index 475010c..66e0833 100644
+--- a/app/pages/admin/export.vue
++++ b/app/pages/admin/export.vue
+@@ -8,6 +8,11 @@ const downloading = ref(false)
+ 
+ const { data: employees } = await useFetch('/api/admin/employees')
+ 
++const employeeItems = computed(() => [
++  { label: '全員', value: 'all' },
++  ...(employees.value ?? []).map(e => ({ label: `${e.id} ${e.name}`, value: e.id })),
++])
++
+ async function download() {
+   errors.value = []
+   downloading.value = true
+@@ -31,31 +36,31 @@ async function download() {
+ </script>
+ 
+ <template>
+-  <div class="page">
+-    <h1>CSV出力</h1>
+-    <section class="card">
+-      <form class="form" @submit.prevent="download">
+-        <div class="field">
+-          <span>月</span>
++  <div class="flex flex-col gap-4">
++    <h1 class="text-2xl font-bold">
++      CSV出力
++    </h1>
++    <UCard>
++      <form class="flex flex-col gap-4" @submit.prevent="download">
++        <UFormField label="月">
+           <MonthPicker v-model="month" />
+-        </div>
+-        <label class="field">
+-          <span>従業員</span>
+-          <select v-model="userId">
+-            <option value="all">全員</option>
+-            <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.id }} {{ e.name }}</option>
+-          </select>
+-        </label>
++        </UFormField>
++        <UFormField label="従業員">
++          <USelect v-model="userId" :items="employeeItems" class="w-full max-w-xs" />
++        </UFormField>
+         <ErrorList :messages="errors" />
+         <div>
+-          <button type="submit" class="btn btn-primary" :disabled="downloading">
+-            {{ downloading ? '作成中…' : 'CSVをダウンロード' }}
+-          </button>
++          <UButton
++            type="submit"
++            icon="i-lucide-download"
++            :loading="downloading"
++            :label="downloading ? '作成中…' : 'CSVをダウンロード'"
++          />
+         </div>
+       </form>
+-      <p class="muted small">
++      <p class="mt-4 text-sm text-muted">
+         列：従業員ID, 氏名, 日付, 出勤, 退勤, 休憩(分), 実働(分), 残業(分), 備考。UTF-8（BOM付き）で出力するので、Excel でそのまま開けます。
+       </p>
+-    </section>
++    </UCard>
+   </div>
+ </template>
+diff --git a/app/pages/admin/index.vue b/app/pages/admin/index.vue
+index 590863b..6d2d204 100644
+--- a/app/pages/admin/index.vue
++++ b/app/pages/admin/index.vue
+@@ -1,4 +1,7 @@
+ <script setup lang="ts">
++import type { TableColumn } from '@nuxt/ui'
++import type { EmployeeMonthlySummary } from '#shared/types/attendance'
++
+ useHead({ title: '月次一覧 | 勤怠管理' })
+ 
+ const month = useMonthQuery()
+@@ -13,56 +16,64 @@ const total = computed(() => (data.value?.rows ?? []).reduce(
+   }),
+   { workDays: 0, workMinutes: 0, overtimeMinutes: 0, missingCount: 0 },
+ ))
++
++const num = { class: { th: 'text-end', td: 'text-end' } }
++
++const columns: TableColumn<EmployeeMonthlySummary>[] = [
++  { id: 'id', header: '従業員ID', footer: '合計' },
++  { id: 'name', header: '氏名' },
++  { id: 'workDays', header: '出勤日数', meta: num, footer: () => `${total.value.workDays}日` },
++  { id: 'workMinutes', header: '実働時間', meta: num, footer: () => formatDuration(total.value.workMinutes) },
++  { id: 'overtimeMinutes', header: '残業時間', meta: num, footer: () => formatDuration(total.value.overtimeMinutes) },
++  { id: 'missingCount', header: '打刻漏れ', meta: num, footer: () => `${total.value.missingCount}件` },
++  { id: 'actions', meta: num },
++]
+ </script>
+ 
+ <template>
+-  <div class="page">
+-    <div class="page-header">
+-      <h1>月次一覧 <small v-if="data">{{ formatMonthLabel(data.month) }}</small></h1>
++  <div class="flex flex-col gap-4">
++    <div class="flex flex-wrap items-center justify-between gap-3">
++      <h1 class="text-2xl font-bold">
++        月次一覧 <small v-if="data" class="ml-2 text-sm font-normal text-muted">{{ formatMonthLabel(data.month) }}</small>
++      </h1>
+       <MonthPicker v-model="month" />
+     </div>
+     <ErrorList v-if="error" :messages="errorMessages(error)" />
+-    <div v-if="data" class="table-wrap">
+-      <table class="table" :class="{ loading: status === 'pending' }">
+-        <thead>
+-          <tr>
+-            <th>従業員ID</th>
+-            <th>氏名</th>
+-            <th class="num">出勤日数</th>
+-            <th class="num">実働時間</th>
+-            <th class="num">残業時間</th>
+-            <th class="num">打刻漏れ</th>
+-            <th />
+-          </tr>
+-        </thead>
+-        <tbody>
+-          <tr v-for="row in data.rows" :key="row.user.id">
+-            <td>{{ row.user.id }}</td>
+-            <td>{{ row.user.name }}</td>
+-            <td class="num">{{ row.workDays }}日</td>
+-            <td class="num">{{ formatDuration(row.workMinutes) }}</td>
+-            <td class="num">{{ formatDuration(row.overtimeMinutes) }}</td>
+-            <td class="num">
+-              <span :class="{ 'badge badge-warn': row.missingCount > 0 }">{{ row.missingCount }}件</span>
+-            </td>
+-            <td class="actions">
+-              <NuxtLink :to="{ path: `/admin/employees/${row.user.id}`, query: { month: data.month } }" class="btn btn-small">
+-                日別・修正
+-              </NuxtLink>
+-            </td>
+-          </tr>
+-        </tbody>
+-        <tfoot>
+-          <tr>
+-            <th colspan="2">合計</th>
+-            <td class="num">{{ total.workDays }}日</td>
+-            <td class="num">{{ formatDuration(total.workMinutes) }}</td>
+-            <td class="num">{{ formatDuration(total.overtimeMinutes) }}</td>
+-            <td class="num">{{ total.missingCount }}件</td>
+-            <td />
+-          </tr>
+-        </tfoot>
+-      </table>
+-    </div>
++    <UCard v-if="data" :ui="{ body: 'p-0 sm:p-0' }">
++      <UTable :data="data.rows" :columns="columns" :loading="status === 'pending'">
++        <template #id-cell="{ row }">
++          {{ row.original.user.id }}
++        </template>
++        <template #name-cell="{ row }">
++          {{ row.original.user.name }}
++        </template>
++        <template #workDays-cell="{ row }">
++          {{ row.original.workDays }}日
++        </template>
++        <template #workMinutes-cell="{ row }">
++          {{ formatDuration(row.original.workMinutes) }}
++        </template>
++        <template #overtimeMinutes-cell="{ row }">
++          {{ formatDuration(row.original.overtimeMinutes) }}
++        </template>
++        <template #missingCount-cell="{ row }">
++          <UBadge v-if="row.original.missingCount > 0" color="warning" variant="subtle" :label="`${row.original.missingCount}件`" />
++          <span v-else>0件</span>
++        </template>
++        <!-- 見出しが空文字だとハイドレーションがずれるので、読み上げ用の見出しを置く -->
++        <template #actions-header>
++          <span class="sr-only">操作</span>
++        </template>
++        <template #actions-cell="{ row }">
++          <UButton
++            :to="{ path: `/admin/employees/${row.original.user.id}`, query: { month: data.month } }"
++            size="xs"
++            color="neutral"
++            variant="outline"
++            label="日別・修正"
++          />
++        </template>
++      </UTable>
++    </UCard>
+   </div>
+ </template>
+diff --git a/app/pages/admin/missing-punches.vue b/app/pages/admin/missing-punches.vue
+index 1e80b67..346b461 100644
+--- a/app/pages/admin/missing-punches.vue
++++ b/app/pages/admin/missing-punches.vue
+@@ -1,4 +1,7 @@
+ <script setup lang="ts">
++import type { TableColumn } from '@nuxt/ui'
++import type { MissingPunchView } from '#shared/types/attendance'
++
+ useHead({ title: '打刻漏れ | 勤怠管理' })
+ 
+ const { data, error, refresh } = await useFetch('/api/admin/missing-punches')
+@@ -15,6 +18,14 @@ const dateTimeFormat = new Intl.DateTimeFormat('ja-JP', {
+   minute: '2-digit',
+ })
+ 
++const columns: TableColumn<MissingPunchView>[] = [
++  { id: 'date', header: '日付' },
++  { id: 'user', header: '従業員' },
++  { id: 'detectedAt', header: '検出日時' },
++  { id: 'resolved', header: '状態' },
++  { id: 'actions', meta: { class: { th: 'text-end', td: 'text-end' } } },
++]
++
+ async function runNow() {
+   runMessage.value = ''
+   runErrors.value = []
+@@ -34,49 +45,56 @@ async function runNow() {
+ </script>
+ 
+ <template>
+-  <div class="page">
+-    <div class="page-header">
+-      <h1>打刻漏れ</h1>
+-      <button type="button" class="btn" :disabled="running" @click="runNow">
+-        {{ running ? '検査中…' : '前日分を今すぐ検査' }}
+-      </button>
++  <div class="flex flex-col gap-4">
++    <div class="flex flex-wrap items-center justify-between gap-3">
++      <h1 class="text-2xl font-bold">
++        打刻漏れ
++      </h1>
++      <UButton
++        color="neutral"
++        variant="outline"
++        icon="i-lucide-search-check"
++        :loading="running"
++        :label="running ? '検査中…' : '前日分を今すぐ検査'"
++        @click="runNow"
++      />
+     </div>
+-    <p class="muted">
++    <p class="text-muted">
+       毎日0時（日本時間）に、前日に出勤したまま退勤がない記録を自動で検出しています。修正は従業員の「日別・修正」画面から行えます。
+     </p>
+-    <p v-if="runMessage" class="alert alert-success" role="status">{{ runMessage }}</p>
++    <UAlert v-if="runMessage" color="success" variant="subtle" icon="i-lucide-circle-check" :title="runMessage" role="status" />
+     <ErrorList :messages="runErrors" />
+     <ErrorList v-if="error" :messages="errorMessages(error)" />
+ 
+-    <div v-if="data" class="table-wrap">
+-      <p v-if="data.length === 0" class="muted">検出された打刻漏れはありません。</p>
+-      <table v-else class="table">
+-        <thead>
+-          <tr>
+-            <th>日付</th>
+-            <th>従業員</th>
+-            <th>検出日時</th>
+-            <th>状態</th>
+-            <th />
+-          </tr>
+-        </thead>
+-        <tbody>
+-          <tr v-for="log in data" :key="log.id">
+-            <td>{{ formatDateLabel(log.date) }} <small class="muted">{{ log.date.slice(0, 4) }}年</small></td>
+-            <td>{{ log.userId }} {{ log.userName }}</td>
+-            <td>{{ dateTimeFormat.format(new Date(log.detectedAt)) }}</td>
+-            <td>
+-              <span v-if="log.resolved" class="badge badge-ok">修正済み</span>
+-              <span v-else class="badge badge-warn">未対応</span>
+-            </td>
+-            <td class="actions">
+-              <NuxtLink :to="{ path: `/admin/employees/${log.userId}`, query: { month: log.date.slice(0, 7) } }" class="btn btn-small">
+-                勤怠を開く
+-              </NuxtLink>
+-            </td>
+-          </tr>
+-        </tbody>
+-      </table>
+-    </div>
++    <UCard v-if="data" :ui="{ body: 'p-0 sm:p-0' }">
++      <UTable :data="data" :columns="columns" empty="検出された打刻漏れはありません。">
++        <template #date-cell="{ row }">
++          {{ formatDateLabel(row.original.date) }} <small class="text-dimmed">{{ row.original.date.slice(0, 4) }}年</small>
++        </template>
++        <template #user-cell="{ row }">
++          {{ row.original.userId }} {{ row.original.userName }}
++        </template>
++        <template #detectedAt-cell="{ row }">
++          {{ dateTimeFormat.format(new Date(row.original.detectedAt)) }}
++        </template>
++        <template #resolved-cell="{ row }">
++          <UBadge v-if="row.original.resolved" color="success" variant="subtle" label="修正済み" />
++          <UBadge v-else color="warning" variant="subtle" label="未対応" />
++        </template>
++        <!-- 見出しが空文字だとハイドレーションがずれるので、読み上げ用の見出しを置く -->
++        <template #actions-header>
++          <span class="sr-only">操作</span>
++        </template>
++        <template #actions-cell="{ row }">
++          <UButton
++            :to="{ path: `/admin/employees/${row.original.userId}`, query: { month: row.original.date.slice(0, 7) } }"
++            size="xs"
++            color="neutral"
++            variant="outline"
++            label="勤怠を開く"
++          />
++        </template>
++      </UTable>
++    </UCard>
+   </div>
+ </template>
+diff --git a/app/pages/attendance.vue b/app/pages/attendance.vue
+index 9942604..36b47e9 100644
+--- a/app/pages/attendance.vue
++++ b/app/pages/attendance.vue
+@@ -10,15 +10,17 @@ const { data, error, status } = await useFetch(() => `/api/users/${user.value!.i
+ </script>
+ 
+ <template>
+-  <div class="page">
+-    <div class="page-header">
+-      <h1>勤怠一覧 <small v-if="data">{{ formatMonthLabel(data.month) }}</small></h1>
++  <div class="flex flex-col gap-4">
++    <div class="flex flex-wrap items-center justify-between gap-3">
++      <h1 class="text-2xl font-bold">
++        勤怠一覧 <small v-if="data" class="ml-2 text-sm font-normal text-muted">{{ formatMonthLabel(data.month) }}</small>
++      </h1>
+       <MonthPicker v-model="month" />
+     </div>
+     <ErrorList v-if="error" :messages="errorMessages(error)" />
+     <template v-if="data">
+       <MonthTotalsBar :totals="data.totals" />
+-      <AttendanceTable :days="data.days" :totals="data.totals" :class="{ loading: status === 'pending' }" />
++      <AttendanceTable :days="data.days" :totals="data.totals" :loading="status === 'pending'" />
+     </template>
+   </div>
+ </template>
+diff --git a/app/pages/login.vue b/app/pages/login.vue
+index 49f722f..12ba0d0 100644
+--- a/app/pages/login.vue
++++ b/app/pages/login.vue
+@@ -27,22 +27,24 @@ async function login() {
+ </script>
+ 
+ <template>
+-  <div class="login-card card">
+-    <h1>勤怠管理</h1>
+-    <p class="muted">メールアドレスとパスワードでログインしてください。</p>
+-    <form class="form" @submit.prevent="login">
+-      <label class="field">
+-        <span>メールアドレス</span>
+-        <input v-model="email" type="email" autocomplete="username" required>
+-      </label>
+-      <label class="field">
+-        <span>パスワード</span>
+-        <input v-model="password" type="password" autocomplete="current-password" required>
+-      </label>
++  <UCard class="w-full max-w-sm">
++    <template #header>
++      <h1 class="text-center text-xl font-bold">
++        勤怠管理
++      </h1>
++      <p class="mt-1 text-center text-sm text-muted">
++        メールアドレスとパスワードでログインしてください。
++      </p>
++    </template>
++    <form class="flex flex-col gap-4" @submit.prevent="login">
++      <UFormField label="メールアドレス" name="email" required>
++        <UInput v-model="email" type="email" autocomplete="username" required class="w-full" />
++      </UFormField>
++      <UFormField label="パスワード" name="password" required>
++        <UInput v-model="password" type="password" autocomplete="current-password" required class="w-full" />
++      </UFormField>
+       <ErrorList :messages="errors" />
+-      <button type="submit" class="btn btn-primary" :disabled="submitting">
+-        {{ submitting ? 'ログイン中…' : 'ログイン' }}
+-      </button>
++      <UButton type="submit" block :loading="submitting" :label="submitting ? 'ログイン中…' : 'ログイン'" />
+     </form>
+-  </div>
++  </UCard>
+ </template>
+diff --git a/app/pages/punch.vue b/app/pages/punch.vue
+index 738cc7f..fdb449d 100644
+--- a/app/pages/punch.vue
++++ b/app/pages/punch.vue
+@@ -1,11 +1,25 @@
+ <script setup lang="ts">
+-import type { PunchAction, PunchStatus } from '#shared/types/attendance'
++import type { ButtonProps } from '@nuxt/ui'
++import type { PunchAction, PunchState, PunchStatus } from '#shared/types/attendance'
+ 
+ useHead({ title: '打刻 | 勤怠管理' })
+ 
+ const { data: status, refresh, error: loadError } = await useFetch('/api/punch/status')
++const { trackPunch } = useAnalytics()
+ 
+-const ACTIONS: PunchAction[] = ['clockIn', 'breakStart', 'breakEnd', 'clockOut']
++const ACTIONS: { action: PunchAction, color: ButtonProps['color'], variant: ButtonProps['variant'], icon: string }[] = [
++  { action: 'clockIn', color: 'primary', variant: 'solid', icon: 'i-lucide-log-in' },
++  { action: 'breakStart', color: 'neutral', variant: 'outline', icon: 'i-lucide-coffee' },
++  { action: 'breakEnd', color: 'neutral', variant: 'outline', icon: 'i-lucide-briefcase' },
++  { action: 'clockOut', color: 'neutral', variant: 'subtle', icon: 'i-lucide-log-out' },
++]
++
++const STATE_COLORS: Record<PunchState, 'neutral' | 'primary' | 'warning' | 'success'> = {
++  notStarted: 'neutral',
++  working: 'primary',
++  onBreak: 'warning',
++  finished: 'success',
++}
+ 
+ const now = ref<{ date: string, time: string } | null>(null)
+ const seconds = ref('')
+@@ -39,6 +53,7 @@ async function press(action: PunchAction) {
+     const next = await $fetch<PunchStatus>('/api/punch', { method: 'POST', body: { action } })
+     status.value = next
+     message.value = `「${PUNCH_ACTION_LABELS[action]}」を打刻しました。`
++    trackPunch(action)
+   }
+   catch (e) {
+     errors.value = errorMessages(e)
+@@ -57,53 +72,110 @@ const today = computed(() => {
+ </script>
+ 
+ <template>
+-  <div class="page">
+-    <h1>打刻</h1>
++  <div class="flex flex-col gap-4">
++    <h1 class="text-2xl font-bold">
++      打刻
++    </h1>
+     <ErrorList v-if="loadError" :messages="errorMessages(loadError)" />
+ 
+-    <section v-if="status" class="card punch-card">
+-      <div class="clock">
+-        <div class="clock-date">{{ formatDateLabel(status.date) }}</div>
+-        <ClientOnly>
+-          <div class="clock-time">{{ now?.time }}<small>:{{ seconds }}</small></div>
+-          <template #fallback><div class="clock-time">--:--</div></template>
+-        </ClientOnly>
+-        <div class="state" :class="`state-${status.state}`">{{ PUNCH_STATE_LABELS[status.state] }}</div>
+-      </div>
++    <UCard v-if="status">
++      <div class="flex flex-col items-center gap-5 py-4">
++        <div class="text-center">
++          <div class="text-muted">
++            {{ formatDateLabel(status.date) }}
++          </div>
++          <ClientOnly>
++            <div class="text-5xl leading-tight font-bold">
++              {{ now?.time }}<small class="text-2xl text-muted">:{{ seconds }}</small>
++            </div>
++            <template #fallback>
++              <div class="text-5xl leading-tight font-bold">
++                --:--
++              </div>
++            </template>
++          </ClientOnly>
++          <UBadge
++            class="mt-2"
++            size="lg"
++            variant="subtle"
++            :color="STATE_COLORS[status.state]"
++            :label="PUNCH_STATE_LABELS[status.state]"
++          />
++        </div>
+ 
+-      <div class="punch-buttons">
+-        <button
+-          v-for="action in ACTIONS"
+-          :key="action"
+-          type="button"
+-          class="btn btn-punch"
+-          :class="`punch-${action}`"
+-          :disabled="!canPress(action)"
+-          @click="press(action)"
+-        >
+-          {{ PUNCH_ACTION_LABELS[action] }}
+-        </button>
+-      </div>
++        <div class="grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
++          <UButton
++            v-for="a in ACTIONS"
++            :key="a.action"
++            size="xl"
++            block
++            class="h-16 text-lg font-bold"
++            :color="a.color"
++            :variant="a.variant"
++            :icon="a.icon"
++            :label="PUNCH_ACTION_LABELS[a.action]"
++            :disabled="!canPress(a.action)"
++            @click="press(a.action)"
++          />
++        </div>
+ 
+-      <p v-if="message" class="alert alert-success" role="status">{{ message }}</p>
+-      <ErrorList :messages="errors" />
+-    </section>
++        <UAlert
++          v-if="message"
++          class="w-full max-w-2xl"
++          color="success"
++          variant="subtle"
++          icon="i-lucide-circle-check"
++          :title="message"
++          role="status"
++        />
++        <ErrorList class="w-full max-w-2xl" :messages="errors" />
++      </div>
++    </UCard>
+ 
+-    <section class="card">
+-      <h2>今日の記録</h2>
+-      <p v-if="!today" class="muted">まだ出勤していません。</p>
+-      <dl v-else class="record">
+-        <div><dt>出勤</dt><dd>{{ today.clockIn }}</dd></div>
++    <UCard>
++      <template #header>
++        <h2 class="text-lg font-bold">
++          今日の記録
++        </h2>
++      </template>
++      <p v-if="!today" class="text-muted">
++        まだ出勤していません。
++      </p>
++      <dl v-else class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+         <div>
+-          <dt>休憩</dt>
+-          <dd>
++          <dt class="text-xs text-muted">
++            出勤
++          </dt>
++          <dd class="font-bold">
++            {{ today.clockIn }}
++          </dd>
++        </div>
++        <div>
++          <dt class="text-xs text-muted">
++            休憩
++          </dt>
++          <dd class="font-bold">
+             <span v-if="today.breaks.length === 0">なし</span>
+-            <span v-for="(b, i) in today.breaks" :key="i" class="break-item">{{ b.start }}〜{{ b.end ?? '（休憩中）' }}</span>
++            <span v-for="(b, i) in today.breaks" :key="i" class="block">{{ b.start }}〜{{ b.end ?? '（休憩中）' }}</span>
++          </dd>
++        </div>
++        <div>
++          <dt class="text-xs text-muted">
++            退勤
++          </dt>
++          <dd class="font-bold">
++            {{ today.clockOut ?? '—' }}
++          </dd>
++        </div>
++        <div v-if="today.workMinutes !== null">
++          <dt class="text-xs text-muted">
++            実働
++          </dt>
++          <dd class="font-bold">
++            {{ formatDuration(today.workMinutes) }}（残業 {{ formatDuration(today.overtimeMinutes) }}）
+           </dd>
+         </div>
+-        <div><dt>退勤</dt><dd>{{ today.clockOut ?? '—' }}</dd></div>
+-        <div v-if="today.workMinutes !== null"><dt>実働</dt><dd>{{ formatDuration(today.workMinutes) }}（残業 {{ formatDuration(today.overtimeMinutes) }}）</dd></div>
+       </dl>
+-    </section>
++    </UCard>
+   </div>
+ </template>
+diff --git a/app/plugins/analytics.client.ts b/app/plugins/analytics.client.ts
+new file mode 100644
+index 0000000..cb79d63
+--- /dev/null
++++ b/app/plugins/analytics.client.ts
+@@ -0,0 +1,6 @@
++// 同意済みの利用者は、最初の画面の表示とハイドレーションが終わってから gtag.js を読み込む。
++// onNuxtReady はブラウザが空いた時（requestIdleCallback）に呼ばれるので、表示を妨げない。
++export default defineNuxtPlugin(() => {
++  const { start } = useAnalytics()
++  onNuxtReady(() => start())
++})
+diff --git a/eslint.config.mjs b/eslint.config.mjs
+new file mode 100644
+index 0000000..5b6b926
+--- /dev/null
++++ b/eslint.config.mjs
+@@ -0,0 +1,11 @@
++// @ts-check
++import withNuxt from './.nuxt/eslint.config.mjs'
++
++export default withNuxt(
++  {
++    rules: {
++      // 既存のテンプレートは、短いタグの属性を1行に並べて書いている。その書き方を許す
++      'vue/max-attributes-per-line': 'off',
++    },
++  },
++)
+diff --git a/nuxt.config.ts b/nuxt.config.ts
+index d6e762f..6019bb8 100644
+--- a/nuxt.config.ts
++++ b/nuxt.config.ts
+@@ -1,18 +1,15 @@
+ // https://nuxt.com/docs/api/configuration/nuxt-config
+ export default defineNuxtConfig({
+-  compatibilityDate: '2025-07-15',
++  modules: ['@nuxt/eslint', '@nuxt/ui', 'nuxt-auth-utils', 'nuxt-gtag'],
+   devtools: { enabled: true },
+-  modules: ['nuxt-auth-utils'],
+-  css: ['~/assets/main.css'],
+   app: {
+     head: {
+       htmlAttrs: { lang: 'ja' },
+       title: '勤怠管理',
+     },
+   },
+-  typescript: {
+-    strict: true,
+-  },
++  css: ['~/assets/main.css'],
++  compatibilityDate: '2025-07-15',
+   nitro: {
+     experimental: {
+       tasks: true,
+@@ -24,4 +21,19 @@ export default defineNuxtConfig({
+       '0 0 * * *': ['attendance:detect-missing'],
+     },
+   },
++  typescript: {
++    strict: true,
++  },
++  eslint: {
++    config: {
++      // 既存コードの書き方（セミコロンなし・シングルクォート・2スペース）に合わせる
++      stylistic: true,
++    },
++  },
++  // Google Analytics。利用者が同意するまでは gtag.js を読み込まない（manual）。
++  // 同意後の読み込みは app/plugins/analytics.client.ts で行う。
++  gtag: {
++    id: 'G-XXXXXXXXXX',
++    initMode: 'manual',
++  },
+ })
+diff --git a/package.json b/package.json
+index 6b0913e..a3ab5de 100644
+--- a/package.json
++++ b/package.json
+@@ -8,17 +8,25 @@
+     "preview": "nuxt preview",
+     "typecheck": "nuxt typecheck",
+     "test": "vitest run",
+-    "postinstall": "nuxt prepare"
++    "postinstall": "nuxt prepare",
++    "lint": "eslint .",
++    "lint:fix": "eslint . --fix"
+   },
+   "dependencies": {
++    "@iconify-json/lucide": "^1.2.146",
++    "@nuxt/ui": "^4.12.0",
+     "nuxt": "^4.6.2",
+     "nuxt-auth-utils": "^0.5.32",
++    "nuxt-gtag": "^5.0.0",
++    "tailwindcss": "^4.3.3",
+     "vue": "^3.5.44",
+     "vue-router": "^5.4.0",
+     "zod": "^4.6.7"
+   },
+   "devDependencies": {
++    "@nuxt/eslint": "^1.17.0",
+     "@types/node": "^24.19.2",
++    "eslint": "^10.13.0",
+     "typescript": "~5.9.3",
+     "vitest": "^5.0.5",
+     "vue-tsc": "^3.3.13"
+diff --git a/server/api/admin/export.get.ts b/server/api/admin/export.get.ts
+index bb93e5d..86c674b 100644
+--- a/server/api/admin/export.get.ts
++++ b/server/api/admin/export.get.ts
+@@ -42,5 +42,5 @@ export default defineEventHandler(async (event) => {
+     'Content-Disposition': `attachment; filename="${filename}"`,
+     'Cache-Control': 'no-store',
+   })
+-  return `﻿${lines.join('\r\n')}\r\n`
++  return `\uFEFF${lines.join('\r\n')}\r\n`
+ })

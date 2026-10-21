@@ -83,7 +83,7 @@
 - [ ] モジュール数を集計し直し（`pnpm modules`）、nuxt.com/modules の表示とも見比べる
 - [ ] `pnpm check` を通す
 - [ ] 本番と同じ環境で通しのリハーサルをし、時間を測る
-- [ ] pushしてGitHub Pagesに公開し、デプロイが成功したことを確かめる（デッキを `slides/` に移してから初めてのデプロイです）
+- [x] pushしてGitHub Pagesに公開し、デプロイが成功したことを確かめる（2026-10-21、https://r-az.github.io/febi-nuxt-intro-26.10.27/）
 
 ## 6. 発表当日（10/27）
 

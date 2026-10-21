@@ -1,0 +1,2033 @@
+diff --git a/.env.example b/.env.example
+index ac424c8..67f06db 100644
+--- a/.env.example
++++ b/.env.example
+@@ -5,3 +5,6 @@ SESSION_SECRET=
+ # 外部のスケジューラ（Vercel Cron など）から /api/cron/detect-missing-clock-outs を呼ぶときの合言葉。
+ # 未設定のとき、この API は常に 401 を返す。
+ CRON_SECRET=
++
++# Google Analytics の測定 ID。未設定のときは G-XXXXXXXXXX を使う。
++NEXT_PUBLIC_GA_MEASUREMENT_ID=
+diff --git a/README.md b/README.md
+index f395bfe..2868056 100644
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,6 @@
+ # 勤怠管理
+ 
+-従業員 10〜30 人程度の会社向けの勤怠管理 Web アプリです。Next.js 16（App Router）と TypeScript で作っています。
++従業員 10〜30 人程度の会社向けの勤怠管理 Web アプリです。Next.js 16（App Router）と TypeScript で作っています。画面の部品には Mantine を使っています。
+ 
+ データベースは使わず、サーバーのメモリ上にモックのデータを持ちます。サーバーを再起動すると初期データに戻ります。画面はすべてサーバーの API（`app/api/**`）を通してデータを読み書きします。
+ 
+@@ -37,6 +37,7 @@ npm start
+ | --- | --- |
+ | `SESSION_SECRET` | セッション Cookie の署名鍵。未設定なら開発用の固定値を使うので、本番では必ず設定してください。 |
+ | `CRON_SECRET` | 外部スケジューラから打刻漏れ検出 API を呼ぶときの合言葉。 |
++| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics の測定 ID。未設定なら `G-XXXXXXXXXX` を使います。ビルド時に埋め込まれるので、変えたらビルドし直してください。 |
+ 
+ ## テスト・型チェック・Lint
+ 
+@@ -52,7 +53,13 @@ npm run typecheck
+ npm run lint
+ ```
+ 
+-テストは Vitest で、`tests/` にあります。勤怠の計算ルール（`lib/attendance.ts`）のほか、打刻の状態遷移、修正時の入力チェック、CSV の形式、打刻漏れの検出も確かめています。
++Lint は ESLint 9 と Next.js 公式の設定（`eslint-config-next` の core-web-vitals と TypeScript 用のルール）で、設定は `eslint.config.mjs` にあります。`npm run lint` はプロジェクト全体を調べ、エラーが 1 件でもあれば失敗します。自動で直せるものを直すときは次のコマンドを使います。
++
++```bash
++npm run lint:fix
++```
++
++テストは Vitest で、`tests/` にあります。勤怠の計算ルール（`lib/attendance.ts`）のほか、打刻の状態遷移、修正時の入力チェック、CSV の形式、打刻漏れの検出、アクセス解析の同意と打刻イベントの送信も確かめています。
+ 
+ ## ログイン用のアカウント
+ 
+@@ -80,6 +87,33 @@ npm run lint
+ 
+ ログインしていないと、どの画面を開いてもログイン画面に移ります（`proxy.ts`）。従業員が管理者用の画面を開くと打刻画面に、管理者が従業員用の画面を開くと月次一覧に移ります。
+ 
++## 画面の見た目
++
++画面は UI コンポーネントライブラリの [Mantine](https://mantine.dev/)（v9）で作っています。ボタン、入力欄、表、モーダル、日付の選択などは Mantine の部品です。
++
++見た目はテーマ設定（`components/theme.ts`）でまとめて決めていて、部品ごとに色や角の丸みを指定していません。変えたいときはこのファイルを直します。
++
++| 項目 | 設定 |
++| --- | --- |
++| 主色（ボタン、リンク、選択中のメニューなど） | 会社のブランドカラー `#0F766E`。ダークモードでは暗い背景で読めるよう、同じ色相の明るい色（`#14B8A6`、文字は黒）に切り替えます。 |
++| 角の丸み | ボタン、入力欄、カードなどを 4px にそろえています。 |
++| 書体 | Noto Sans JP（`next/font` でサーバーから配信するので、閲覧時に Google のサーバーへはアクセスしません）。 |
++| 表 | 行の上下の余白を 4px に詰め、文字を 14px にしています。 |
++
++画面右上のボタンで、ライトモードとダークモードを切り替えられます。最初は OS の設定に合わせ、選んだモードはブラウザに保存します。
++
++## アクセス解析（Google Analytics）
++
++Google Analytics（測定 ID：`G-XXXXXXXXXX`）で利用状況を計測します。
++
++- 初めて開いたときは、画面の下に同意を求めるバナーが出ます。「同意する」を押すまで、計測用のスクリプト（gtag.js）を読み込まず、データも送りません。「同意しない」を選んだ場合も送りません。
++- 同意すると、その場で gtag.js を読み込んで計測を始めます。読み込みは画面の表示が終わってから行うので、最初の画面の表示を遅らせません。
++- 選んだ結果はブラウザ（localStorage の `analytics-consent`）に保存します。選び直したいときは、この値を消してから画面を開き直してください。
++- 打刻すると、イベント `punch` を送ります。パラメータ `punch_type` に種類（出勤・休憩開始・休憩終了・退勤）、`punch_action` に内部の値（`clock_in` など）が入ります。
++- 同意を得たのはアクセス解析だけなので、広告用の保存と利用（`ad_storage` など）は拒否のまま送ります。
++
++処理は `lib/analytics.ts`（同意の保存と送信）と `components/Analytics.tsx`（バナーと読み込み）にあります。
++
+ ## 勤怠の計算ルール
+ 
+ - 実働時間 = 退勤 − 出勤 − 休憩時間
+@@ -120,8 +154,8 @@ npm run lint
+ 
+ ```
+ app/            画面と API（Route Handler）
+-components/     画面の部品
+-lib/            画面とサーバーで共有する処理（計算ルール、日付、打刻の状態遷移、入力チェック、CSV）
++components/     画面の部品、テーマ設定（theme.ts）、全画面に効くプロバイダー（Providers.tsx）
++lib/            画面とサーバーで共有する処理（計算ルール、日付、打刻の状態遷移、入力チェック、CSV）と、アクセス解析
+ server/         サーバー側だけの処理（モックのデータ層、初期データ、認証、定期処理）
+ tests/          単体テスト
+ proxy.ts        未ログイン時のリダイレクト
+diff --git a/app/(app)/admin/attendance/page.tsx b/app/(app)/admin/attendance/page.tsx
+index 395a009..82b8b1a 100644
+--- a/app/(app)/admin/attendance/page.tsx
++++ b/app/(app)/admin/attendance/page.tsx
+@@ -1,5 +1,6 @@
+ "use client";
+ 
++import { Group, Select, Stack } from "@mantine/core";
+ import { useRouter, useSearchParams } from "next/navigation";
+ import { Suspense, useCallback, useEffect, useState } from "react";
+ import { ErrorAlert, SuccessAlert } from "@/components/Alert";
+@@ -74,28 +75,24 @@ function AdminAttendance() {
+     <div>
+       <PageTitle
+         actions={
+-          <div className="flex flex-wrap items-center gap-3">
+-            <select
+-              value={userId}
+-              onChange={(e) => select({ userId: e.target.value })}
+-              className="rounded border border-slate-300 bg-white px-2 py-1.5 text-sm"
++          <Group gap="sm">
++            <Select
++              value={userId || null}
++              onChange={(value) => value && select({ userId: value })}
++              data={employees.map((e) => ({ value: e.id, label: `${e.id} ${e.name}` }))}
++              allowDeselect={false}
+               aria-label="従業員"
+-            >
+-              {employees.map((e) => (
+-                <option key={e.id} value={e.id}>
+-                  {e.id} {e.name}
+-                </option>
+-              ))}
+-            </select>
++              w={180}
++            />
+             <MonthPicker value={month} onChange={(m) => select({ month: m })} />
+-          </div>
++          </Group>
+         }
+       >
+         勤怠の修正（{current ? `${current.user.name}・` : ""}
+         {formatMonth(month)}）
+       </PageTitle>
+ 
+-      <div className="space-y-4">
++      <Stack>
+         <ErrorAlert message={error} />
+         <SuccessAlert message={message} />
+         {editing && current && (
+@@ -122,11 +119,10 @@ function AdminAttendance() {
+             onEdit={(date, row) => {
+               setMessage(null);
+               setEditing({ date, row });
+-              window.scrollTo({ top: 0, behavior: "smooth" });
+             }}
+           />
+         )}
+-      </div>
++      </Stack>
+     </div>
+   );
+ }
+diff --git a/app/(app)/admin/export/page.tsx b/app/(app)/admin/export/page.tsx
+index bddf0de..98a578c 100644
+--- a/app/(app)/admin/export/page.tsx
++++ b/app/(app)/admin/export/page.tsx
+@@ -1,5 +1,8 @@
+ "use client";
+ 
++import { Button, Container, Paper, Select, Stack, Text } from "@mantine/core";
++import { MonthPickerInput } from "@mantine/dates";
++import { IconDownload } from "@tabler/icons-react";
+ import { Suspense, useEffect, useState } from "react";
+ import { Loading } from "@/components/Loading";
+ import { ErrorAlert, SuccessAlert } from "@/components/Alert";
+@@ -47,50 +50,45 @@ function ExportPageContent() {
+   }
+ 
+   return (
+-    <div className="max-w-2xl">
++    <Container size="sm" px={0} mx={0}>
+       <PageTitle>CSV出力</PageTitle>
+-      <div className="space-y-4">
++      <Stack>
+         <ErrorAlert message={error} />
+         <SuccessAlert message={message} />
+-        <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 text-sm">
+-          <label className="block">
+-            <span className="mb-1 block text-slate-600">月</span>
+-            <input
+-              type="month"
+-              value={month}
+-              onChange={(e) => setMonth(e.target.value)}
+-              className="rounded border border-slate-300 px-2 py-1.5"
++        <Paper withBorder p="lg">
++          <Stack align="flex-start">
++            <MonthPickerInput
++              label="月"
++              value={`${month}-01`}
++              onChange={(value) => value && setMonth(value.slice(0, 7))}
++              valueFormat="YYYY年M月"
++              w={220}
+             />
+-          </label>
+-          <label className="block">
+-            <span className="mb-1 block text-slate-600">従業員</span>
+-            <select
++            <Select
++              label="従業員"
+               value={userId}
+-              onChange={(e) => setUserId(e.target.value)}
+-              className="rounded border border-slate-300 bg-white px-2 py-1.5"
+-            >
+-              <option value="all">全員</option>
+-              {employees.map((e) => (
+-                <option key={e.id} value={e.id}>
+-                  {e.id} {e.name}
+-                </option>
+-              ))}
+-            </select>
+-          </label>
+-          <button
+-            type="button"
+-            onClick={download}
+-            disabled={downloading || !month}
+-            className="rounded bg-slate-800 px-4 py-2 font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+-          >
+-            CSV をダウンロード
+-          </button>
+-        </div>
+-        <div className="text-xs text-slate-500">
+-          <p>列：従業員ID, 氏名, 日付, 出勤, 退勤, 休憩(分), 実働(分), 残業(分), 備考</p>
+-          <p>文字コードは UTF-8（BOM 付き）です。Excel でそのまま開けます。出勤の記録がある日だけを出力します。</p>
+-        </div>
+-      </div>
+-    </div>
++              onChange={(value) => value && setUserId(value)}
++              data={[
++                { value: "all", label: "全員" },
++                ...employees.map((e) => ({ value: e.id, label: `${e.id} ${e.name}` })),
++              ]}
++              allowDeselect={false}
++              w={220}
++            />
++            <Button onClick={download} loading={downloading} leftSection={<IconDownload size={16} />}>
++              CSV をダウンロード
++            </Button>
++          </Stack>
++        </Paper>
++        <Stack gap={2}>
++          <Text size="xs" c="dimmed">
++            列：従業員ID, 氏名, 日付, 出勤, 退勤, 休憩(分), 実働(分), 残業(分), 備考
++          </Text>
++          <Text size="xs" c="dimmed">
++            文字コードは UTF-8（BOM 付き）です。Excel でそのまま開けます。出勤の記録がある日だけを出力します。
++          </Text>
++        </Stack>
++      </Stack>
++    </Container>
+   );
+ }
+diff --git a/app/(app)/admin/missing/page.tsx b/app/(app)/admin/missing/page.tsx
+index cd0e6d1..2e725e1 100644
+--- a/app/(app)/admin/missing/page.tsx
++++ b/app/(app)/admin/missing/page.tsx
+@@ -1,5 +1,7 @@
+ "use client";
+ 
++import { Anchor, Badge, Button, Group, Paper, Stack, Table, Text } from "@mantine/core";
++import { DatePickerInput } from "@mantine/dates";
+ import Link from "next/link";
+ import { Suspense, useEffect, useState } from "react";
+ import { Loading } from "@/components/Loading";
+@@ -11,9 +13,6 @@ import type { MissingClockOutLog } from "@/lib/types";
+ 
+ type LogRow = MissingClockOutLog & { resolved: boolean };
+ 
+-const th = "border-b border-slate-200 px-4 py-2 text-left text-xs font-semibold text-slate-500";
+-const td = "border-b border-slate-100 px-4 py-3";
+-
+ // 今日の日付から初期表示の月（日）を決めるため、リクエスト時に描画する
+ export default function MissingClockOutsPage() {
+   return (
+@@ -62,88 +61,88 @@ function MissingClockOutsPageContent() {
+   return (
+     <div>
+       <PageTitle>打刻漏れの検出記録</PageTitle>
+-      <div className="space-y-4">
+-        <p className="text-sm text-slate-600">
++      <Stack>
++        <Text size="sm" c="dimmed">
+           毎日 0:00（日本時間）に、前日の「出勤だけ打刻して退勤がない」勤怠を自動で検出し、ここに記録します。
+-        </p>
++        </Text>
+         <ErrorAlert message={error} />
+         <SuccessAlert message={message} />
+ 
+-        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm">
+-          <label>
+-            <span className="mb-1 block text-slate-600">対象日を指定して今すぐ検出</span>
+-            <input
+-              type="date"
++        <Paper withBorder p="md">
++          <Group align="flex-end" gap="sm">
++            <DatePickerInput
++              label="対象日を指定して今すぐ検出"
+               value={date}
+-              onChange={(e) => setDate(e.target.value)}
+-              className="rounded border border-slate-300 px-2 py-1.5"
++              onChange={(value) => value && setDate(value)}
++              valueFormat="YYYY年M月D日"
++              w={220}
+             />
+-          </label>
+-          <button
+-            type="button"
+-            onClick={run}
+-            disabled={running}
+-            className="rounded bg-slate-800 px-4 py-2 font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+-          >
+-            検出を実行
+-          </button>
+-        </div>
++            <Button onClick={run} loading={running}>
++              検出を実行
++            </Button>
++          </Group>
++        </Paper>
+ 
+         {logs && (
+-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+-            <table className="tabular w-full text-sm">
+-              <thead className="bg-slate-50">
+-                <tr>
+-                  <th className={th}>対象日</th>
+-                  <th className={th}>従業員</th>
+-                  <th className={th}>出勤</th>
+-                  <th className={th}>検出日時</th>
+-                  <th className={th}>検出方法</th>
+-                  <th className={th}>現在の状態</th>
+-                  <th className={th} />
+-                </tr>
+-              </thead>
+-              <tbody>
+-                {logs.length === 0 && (
+-                  <tr>
+-                    <td className={`${td} text-slate-500`} colSpan={7}>
+-                      検出された打刻漏れはありません。
+-                    </td>
+-                  </tr>
+-                )}
+-                {logs.map((log) => (
+-                  <tr key={log.id}>
+-                    <td className={td}>{formatDateShort(log.date)}</td>
+-                    <td className={td}>
+-                      {log.userId} {log.userName}
+-                    </td>
+-                    <td className={td}>{log.clockIn}</td>
+-                    <td className={td}>{formatDateTimeJst(log.detectedAt)}</td>
+-                    <td className={td}>{log.source === "schedule" ? "定期処理" : "手動"}</td>
+-                    <td className={td}>
+-                      {log.resolved ? (
+-                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">修正済み</span>
+-                      ) : (
+-                        <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+-                          未修正
+-                        </span>
+-                      )}
+-                    </td>
+-                    <td className={`${td} text-right`}>
+-                      <Link
+-                        href={`/admin/attendance?userId=${log.userId}&month=${log.date.slice(0, 7)}`}
+-                        className="text-sky-700 hover:underline"
+-                      >
+-                        勤怠を修正
+-                      </Link>
+-                    </td>
+-                  </tr>
+-                ))}
+-              </tbody>
+-            </table>
+-          </div>
++          <Paper withBorder>
++            <Table.ScrollContainer minWidth={760}>
++              <Table>
++                <Table.Thead>
++                  <Table.Tr>
++                    <Table.Th>対象日</Table.Th>
++                    <Table.Th>従業員</Table.Th>
++                    <Table.Th>出勤</Table.Th>
++                    <Table.Th>検出日時</Table.Th>
++                    <Table.Th>検出方法</Table.Th>
++                    <Table.Th>現在の状態</Table.Th>
++                    <Table.Th />
++                  </Table.Tr>
++                </Table.Thead>
++                <Table.Tbody>
++                  {logs.length === 0 && (
++                    <Table.Tr>
++                      <Table.Td colSpan={7} c="dimmed">
++                        検出された打刻漏れはありません。
++                      </Table.Td>
++                    </Table.Tr>
++                  )}
++                  {logs.map((log) => (
++                    <Table.Tr key={log.id}>
++                      <Table.Td>{formatDateShort(log.date)}</Table.Td>
++                      <Table.Td>
++                        {log.userId} {log.userName}
++                      </Table.Td>
++                      <Table.Td>{log.clockIn}</Table.Td>
++                      <Table.Td>{formatDateTimeJst(log.detectedAt)}</Table.Td>
++                      <Table.Td>{log.source === "schedule" ? "定期処理" : "手動"}</Table.Td>
++                      <Table.Td>
++                        {log.resolved ? (
++                          <Badge color="green" variant="light">
++                            修正済み
++                          </Badge>
++                        ) : (
++                          <Badge color="red" variant="light">
++                            未修正
++                          </Badge>
++                        )}
++                      </Table.Td>
++                      <Table.Td ta="right">
++                        <Anchor
++                          component={Link}
++                          href={`/admin/attendance?userId=${log.userId}&month=${log.date.slice(0, 7)}`}
++                          inherit
++                        >
++                          勤怠を修正
++                        </Anchor>
++                      </Table.Td>
++                    </Table.Tr>
++                  ))}
++                </Table.Tbody>
++              </Table>
++            </Table.ScrollContainer>
++          </Paper>
+         )}
+-      </div>
++      </Stack>
+     </div>
+   );
+ }
+diff --git a/app/(app)/admin/page.tsx b/app/(app)/admin/page.tsx
+index d0a19b5..22803df 100644
+--- a/app/(app)/admin/page.tsx
++++ b/app/(app)/admin/page.tsx
+@@ -1,5 +1,6 @@
+ "use client";
+ 
++import { Anchor, Paper, Stack, Table, Text } from "@mantine/core";
+ import Link from "next/link";
+ import { Suspense, useEffect, useState } from "react";
+ import { Loading } from "@/components/Loading";
+@@ -12,9 +13,6 @@ import type { MonthTotals, PublicUser } from "@/lib/types";
+ 
+ type SummaryResponse = { month: string; summaries: { user: PublicUser; totals: MonthTotals }[] };
+ 
+-const th = "border-b border-slate-200 px-4 py-2 text-left text-xs font-semibold text-slate-500";
+-const td = "border-b border-slate-100 px-4 py-3";
+-
+ // 今日の日付から初期表示の月（日）を決めるため、リクエスト時に描画する
+ export default function AdminSummaryPage() {
+   return (
+@@ -49,53 +47,56 @@ function AdminSummaryPageContent() {
+       <PageTitle actions={<MonthPicker value={month} onChange={setMonth} />}>
+         月次一覧（{formatMonth(month)}）
+       </PageTitle>
+-      <div className="space-y-4">
++      <Stack>
+         <ErrorAlert message={error} />
+         {data && data.month === month && (
+-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+-            <table className="tabular w-full text-sm">
+-              <thead className="bg-slate-50">
+-                <tr>
+-                  <th className={th}>従業員ID</th>
+-                  <th className={th}>氏名</th>
+-                  <th className={`${th} text-right`}>出勤日数</th>
+-                  <th className={`${th} text-right`}>実働時間の合計</th>
+-                  <th className={`${th} text-right`}>残業時間の合計</th>
+-                  <th className={`${th} text-right`}>打刻漏れ</th>
+-                  <th className={th} />
+-                </tr>
+-              </thead>
+-              <tbody>
+-                {data.summaries.map(({ user, totals }) => (
+-                  <tr key={user.id}>
+-                    <td className={td}>{user.id}</td>
+-                    <td className={td}>{user.name}</td>
+-                    <td className={`${td} text-right`}>{totals.workDays} 日</td>
+-                    <td className={`${td} text-right`}>{formatDuration(totals.workMinutes)}</td>
+-                    <td className={`${td} text-right`}>{formatDuration(totals.overtimeMinutes)}</td>
+-                    <td className={`${td} text-right`}>
+-                      {totals.missingCount > 0 ? (
+-                        <span className="font-semibold text-red-700">{totals.missingCount} 件</span>
+-                      ) : (
+-                        "0 件"
+-                      )}
+-                    </td>
+-                    <td className={`${td} text-right`}>
+-                      <Link
+-                        href={`/admin/attendance?userId=${user.id}&month=${month}`}
+-                        className="text-sm text-sky-700 hover:underline"
+-                      >
+-                        日別を見る・修正
+-                      </Link>
+-                    </td>
+-                  </tr>
+-                ))}
+-              </tbody>
+-            </table>
+-          </div>
++          <Paper withBorder>
++            <Table.ScrollContainer minWidth={720}>
++              <Table>
++                <Table.Thead>
++                  <Table.Tr>
++                    <Table.Th>従業員ID</Table.Th>
++                    <Table.Th>氏名</Table.Th>
++                    <Table.Th ta="right">出勤日数</Table.Th>
++                    <Table.Th ta="right">実働時間の合計</Table.Th>
++                    <Table.Th ta="right">残業時間の合計</Table.Th>
++                    <Table.Th ta="right">打刻漏れ</Table.Th>
++                    <Table.Th />
++                  </Table.Tr>
++                </Table.Thead>
++                <Table.Tbody>
++                  {data.summaries.map(({ user, totals }) => (
++                    <Table.Tr key={user.id}>
++                      <Table.Td>{user.id}</Table.Td>
++                      <Table.Td>{user.name}</Table.Td>
++                      <Table.Td ta="right">{totals.workDays} 日</Table.Td>
++                      <Table.Td ta="right">{formatDuration(totals.workMinutes)}</Table.Td>
++                      <Table.Td ta="right">{formatDuration(totals.overtimeMinutes)}</Table.Td>
++                      <Table.Td ta="right">
++                        {totals.missingCount > 0 ? (
++                          <Text span inherit fw={700} c="red">
++                            {totals.missingCount} 件
++                          </Text>
++                        ) : (
++                          "0 件"
++                        )}
++                      </Table.Td>
++                      <Table.Td ta="right">
++                        <Anchor component={Link} href={`/admin/attendance?userId=${user.id}&month=${month}`} inherit>
++                          日別を見る・修正
++                        </Anchor>
++                      </Table.Td>
++                    </Table.Tr>
++                  ))}
++                </Table.Tbody>
++              </Table>
++            </Table.ScrollContainer>
++          </Paper>
+         )}
+-        <p className="text-xs text-slate-500">打刻漏れの日は実働・残業の合計に含めません。</p>
+-      </div>
++        <Text size="xs" c="dimmed">
++          打刻漏れの日は実働・残業の合計に含めません。
++        </Text>
++      </Stack>
+     </div>
+   );
+ }
+diff --git a/app/(app)/attendance/page.tsx b/app/(app)/attendance/page.tsx
+index 239f6b1..1a22ff6 100644
+--- a/app/(app)/attendance/page.tsx
++++ b/app/(app)/attendance/page.tsx
+@@ -1,5 +1,6 @@
+ "use client";
+ 
++import { Stack, Text } from "@mantine/core";
+ import { Suspense, useEffect, useState } from "react";
+ import { Loading } from "@/components/Loading";
+ import { ErrorAlert } from "@/components/Alert";
+@@ -46,14 +47,14 @@ function MyAttendancePageContent() {
+       <PageTitle actions={<MonthPicker value={month} onChange={setMonth} />}>
+         自分の勤怠一覧（{formatMonth(month)}）
+       </PageTitle>
+-      <div className="space-y-4">
++      <Stack>
+         <ErrorAlert message={error} />
+         {data && data.month === month && <AttendanceTable month={month} rows={data.rows} totals={data.totals} />}
+-        <p className="text-xs text-slate-500">
++        <Text size="xs" c="dimmed">
+           実働時間 = 退勤 − 出勤 − 休憩時間、残業時間 = 実働時間 − 8:00（マイナスなら 0）。
+           打刻漏れの日は実働・残業を計算せず、合計にも含めません。
+-        </p>
+-      </div>
++        </Text>
++      </Stack>
+     </div>
+   );
+ }
+diff --git a/app/(app)/layout.tsx b/app/(app)/layout.tsx
+index 7355bb3..abbf499 100644
+--- a/app/(app)/layout.tsx
++++ b/app/(app)/layout.tsx
+@@ -1,10 +1,5 @@
+-import { AppHeader } from "@/components/AppHeader";
++import { AppFrame } from "@/components/AppFrame";
+ 
+ export default function AppLayout({ children }: { children: React.ReactNode }) {
+-  return (
+-    <>
+-      <AppHeader />
+-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+-    </>
+-  );
++  return <AppFrame>{children}</AppFrame>;
+ }
+diff --git a/app/(app)/punch/page.tsx b/app/(app)/punch/page.tsx
+index ac7b294..b84a900 100644
+--- a/app/(app)/punch/page.tsx
++++ b/app/(app)/punch/page.tsx
+@@ -1,8 +1,10 @@
+ "use client";
+ 
++import { Button, Container, Paper, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
+ import { useEffect, useState, useSyncExternalStore } from "react";
+ import { ErrorAlert, SuccessAlert } from "@/components/Alert";
+ import { PageTitle } from "@/components/PageTitle";
++import { trackPunch } from "@/lib/analytics";
+ import { apiFetch, errorMessage } from "@/lib/api-client";
+ import { PUNCH_LABEL, PUNCH_STATE_LABEL } from "@/lib/punch";
+ import { formatDateShort, formatDuration } from "@/lib/time";
+@@ -16,12 +18,7 @@ type TodayResponse = {
+   record: AttendanceRow | null;
+ };
+ 
+-const ACTIONS: { action: PunchAction; className: string }[] = [
+-  { action: "clock_in", className: "bg-emerald-600 hover:bg-emerald-500" },
+-  { action: "break_start", className: "bg-amber-500 hover:bg-amber-400" },
+-  { action: "break_end", className: "bg-sky-600 hover:bg-sky-500" },
+-  { action: "clock_out", className: "bg-slate-700 hover:bg-slate-600" },
+-];
++const ACTIONS: PunchAction[] = ["clock_in", "break_start", "break_end", "clock_out"];
+ 
+ const clockFormat = new Intl.DateTimeFormat("ja-JP", {
+   timeZone: "Asia/Tokyo",
+@@ -75,6 +72,7 @@ export default function PunchPage() {
+         body: JSON.stringify({ action }),
+       });
+       setToday(res);
++      trackPunch(action);
+       setMessage(`${res.now} に「${PUNCH_LABEL[action]}」を打刻しました。`);
+     } catch (err) {
+       setError(errorMessage(err));
+@@ -88,64 +86,80 @@ export default function PunchPage() {
+   const record = today?.record;
+ 
+   return (
+-    <div className="mx-auto max-w-2xl">
++    <Container size="sm" px={0}>
+       <PageTitle>打刻</PageTitle>
+-      <div className="space-y-4">
+-        <section className="rounded-lg border border-slate-200 bg-white p-8 text-center">
+-          <p className="text-slate-500">{today ? formatDateShort(today.date) : " "}</p>
+-          <p className="tabular my-2 text-5xl font-bold text-slate-800">{clock || " "}</p>
+-          <p className="mb-8">
++      <Stack>
++        <Paper withBorder p="xl" ta="center">
++          <Text c="dimmed">{today ? formatDateShort(today.date) : "\u00a0"}</Text>
++          <Text fz={48} fw={700} lh={1.2} my="xs" style={{ fontVariantNumeric: "tabular-nums" }}>
++            {clock || "\u00a0"}
++          </Text>
++          <Text mb="xl">
+             現在の状態：
+-            <span className="font-semibold">{today ? PUNCH_STATE_LABEL[today.state] : "読み込み中…"}</span>
+-          </p>
+-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+-            {ACTIONS.map(({ action, className }) => {
+-              const enabled = !!today && today.allowedActions.includes(action) && !sending;
+-              return (
+-                <button
+-                  key={action}
+-                  type="button"
+-                  onClick={() => punch(action)}
+-                  disabled={!enabled}
+-                  className={`rounded-lg py-4 text-lg font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 ${className}`}
+-                >
+-                  {PUNCH_LABEL[action]}
+-                </button>
+-              );
+-            })}
+-          </div>
++            <Text span fw={700}>
++              {today ? PUNCH_STATE_LABEL[today.state] : "読み込み中…"}
++            </Text>
++          </Text>
++          <SimpleGrid cols={{ base: 2, sm: 4 }}>
++            {ACTIONS.map((action) => (
++              <Button
++                key={action}
++                size="xl"
++                onClick={() => punch(action)}
++                disabled={!today || !today.allowedActions.includes(action) || sending}
++              >
++                {PUNCH_LABEL[action]}
++              </Button>
++            ))}
++          </SimpleGrid>
+           {/* メッセージでボタンの位置がずれないよう、ボタンの下に出す */}
+-          <div className="mt-6 min-h-12 text-left">
++          <Stack mt="lg" mih={48} ta="left" gap="xs">
+             <ErrorAlert message={error} />
+             <SuccessAlert message={message} />
+-          </div>
+-        </section>
++          </Stack>
++        </Paper>
+ 
+-        <section className="rounded-lg border border-slate-200 bg-white p-6">
+-          <h2 className="mb-3 font-semibold text-slate-700">今日の記録</h2>
++        <Paper withBorder p="lg">
++          <Title order={2} size="h5" mb="sm">
++            今日の記録
++          </Title>
+           {record ? (
+-            <dl className="tabular grid grid-cols-[8rem_1fr] gap-y-2 text-sm">
+-              <dt className="text-slate-500">出勤</dt>
+-              <dd>{record.clockIn}</dd>
+-              <dt className="text-slate-500">休憩</dt>
+-              <dd>
+-                {record.breaks.length === 0
+-                  ? "—"
+-                  : record.breaks.map((b) => `${b.start}〜${b.end ?? "（休憩中）"}`).join(", ")}
+-                {record.breakMinutes > 0 && `（合計 ${formatDuration(record.breakMinutes)}）`}
+-              </dd>
+-              <dt className="text-slate-500">退勤</dt>
+-              <dd>{record.clockOut ?? "—"}</dd>
+-              <dt className="text-slate-500">実働時間</dt>
+-              <dd>{record.workMinutes != null ? formatDuration(record.workMinutes) : "—"}</dd>
+-              <dt className="text-slate-500">残業時間</dt>
+-              <dd>{record.overtimeMinutes != null ? formatDuration(record.overtimeMinutes) : "—"}</dd>
+-            </dl>
++            <Table variant="vertical" layout="fixed" highlightOnHover={false} maw={560}>
++              <Table.Tbody>
++                <Table.Tr>
++                  <Table.Th w={128}>出勤</Table.Th>
++                  <Table.Td>{record.clockIn}</Table.Td>
++                </Table.Tr>
++                <Table.Tr>
++                  <Table.Th>休憩</Table.Th>
++                  <Table.Td>
++                    {record.breaks.length === 0
++                      ? "—"
++                      : record.breaks.map((b) => `${b.start}〜${b.end ?? "（休憩中）"}`).join(", ")}
++                    {record.breakMinutes > 0 && `（合計 ${formatDuration(record.breakMinutes)}）`}
++                  </Table.Td>
++                </Table.Tr>
++                <Table.Tr>
++                  <Table.Th>退勤</Table.Th>
++                  <Table.Td>{record.clockOut ?? "—"}</Table.Td>
++                </Table.Tr>
++                <Table.Tr>
++                  <Table.Th>実働時間</Table.Th>
++                  <Table.Td>{record.workMinutes != null ? formatDuration(record.workMinutes) : "—"}</Table.Td>
++                </Table.Tr>
++                <Table.Tr>
++                  <Table.Th>残業時間</Table.Th>
++                  <Table.Td>{record.overtimeMinutes != null ? formatDuration(record.overtimeMinutes) : "—"}</Table.Td>
++                </Table.Tr>
++              </Table.Tbody>
++            </Table>
+           ) : (
+-            <p className="text-sm text-slate-500">まだ打刻していません。</p>
++            <Text size="sm" c="dimmed">
++              まだ打刻していません。
++            </Text>
+           )}
+-        </section>
+-      </div>
+-    </div>
++        </Paper>
++      </Stack>
++    </Container>
+   );
+ }
+diff --git a/app/globals.css b/app/globals.css
+deleted file mode 100644
+index 863fe89..0000000
+--- a/app/globals.css
++++ /dev/null
+@@ -1,24 +0,0 @@
+-@import "tailwindcss";
+-
+-:root {
+-  color-scheme: light;
+-  --background: #f5f6f8;
+-  --foreground: #1f2933;
+-}
+-
+-@theme inline {
+-  --color-background: var(--background);
+-  --color-foreground: var(--foreground);
+-}
+-
+-body {
+-  background: var(--background);
+-  color: var(--foreground);
+-  font-family:
+-    "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, system-ui, sans-serif;
+-}
+-
+-/* 数値の桁をそろえる */
+-.tabular {
+-  font-variant-numeric: tabular-nums;
+-}
+diff --git a/app/layout.tsx b/app/layout.tsx
+index c97799d..9cc7d64 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -1,5 +1,20 @@
++import "@mantine/core/styles.css";
++import "@mantine/dates/styles.css";
++import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
+ import type { Metadata } from "next";
+-import "./globals.css";
++import { Noto_Sans_JP } from "next/font/google";
++import { Analytics } from "@/components/Analytics";
++import { Providers } from "@/components/Providers";
++
++// 本文の書体。テーマ（components/theme.ts）がこの CSS 変数を参照する。
++// 日本語の文字は必要な範囲だけを表示時に読み込むので、先読みはしない。
++const notoSansJp = Noto_Sans_JP({
++  subsets: ["latin"],
++  weight: ["400", "600", "700"],
++  display: "swap",
++  preload: false,
++  variable: "--font-noto-sans-jp",
++});
+ 
+ export const metadata: Metadata = {
+   title: "勤怠管理",
+@@ -8,8 +23,17 @@ export const metadata: Metadata = {
+ 
+ export default function RootLayout({ children }: LayoutProps<"/">) {
+   return (
+-    <html lang="ja" className="h-full antialiased">
+-      <body className="min-h-full flex flex-col">{children}</body>
++    <html lang="ja" className={notoSansJp.variable} {...mantineHtmlProps}>
++      <head>
++        {/* 保存されたライト・ダークの設定を、最初の描画の前に反映する */}
++        <ColorSchemeScript defaultColorScheme="auto" />
++      </head>
++      <body>
++        <Providers>
++          {children}
++          <Analytics />
++        </Providers>
++      </body>
+     </html>
+   );
+ }
+diff --git a/app/login/page.tsx b/app/login/page.tsx
+index e51353a..4d51fd6 100644
+--- a/app/login/page.tsx
++++ b/app/login/page.tsx
+@@ -1,7 +1,9 @@
+ "use client";
+ 
++import { Box, Button, Center, Group, Paper, PasswordInput, Stack, TextInput, Title } from "@mantine/core";
+ import { useState } from "react";
+ import { ErrorAlert } from "@/components/Alert";
++import { ColorSchemeToggle } from "@/components/ColorSchemeToggle";
+ import { apiFetch, errorMessage } from "@/lib/api-client";
+ import type { PublicUser } from "@/lib/types";
+ 
+@@ -28,42 +30,40 @@ export default function LoginPage() {
+   }
+ 
+   return (
+-    <main className="flex flex-1 items-center justify-center px-6 py-16">
+-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+-        <h1 className="mb-6 text-center text-xl font-bold text-slate-800">勤怠管理 ログイン</h1>
+-        <form onSubmit={handleSubmit} className="space-y-4">
+-          <ErrorAlert message={error} />
+-          <label className="block">
+-            <span className="mb-1 block text-sm text-slate-600">メールアドレス</span>
+-            <input
+-              type="email"
+-              autoComplete="username"
+-              required
+-              value={email}
+-              onChange={(e) => setEmail(e.target.value)}
+-              className="w-full rounded border border-slate-300 px-3 py-2"
+-            />
+-          </label>
+-          <label className="block">
+-            <span className="mb-1 block text-sm text-slate-600">パスワード</span>
+-            <input
+-              type="password"
+-              autoComplete="current-password"
+-              required
+-              value={password}
+-              onChange={(e) => setPassword(e.target.value)}
+-              className="w-full rounded border border-slate-300 px-3 py-2"
+-            />
+-          </label>
+-          <button
+-            type="submit"
+-            disabled={submitting}
+-            className="w-full rounded bg-slate-800 py-2.5 font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+-          >
+-            {submitting ? "ログイン中…" : "ログイン"}
+-          </button>
+-        </form>
+-      </div>
+-    </main>
++    <Box component="main" mih="100vh" p="md">
++      <Group justify="flex-end">
++        <ColorSchemeToggle />
++      </Group>
++      <Center py={64}>
++        <Paper withBorder shadow="sm" p="xl" w="100%" maw={384}>
++          <Title order={1} size="h3" ta="center" mb="lg">
++            勤怠管理 ログイン
++          </Title>
++          <form onSubmit={handleSubmit}>
++            <Stack>
++              <ErrorAlert message={error} />
++              <TextInput
++                label="メールアドレス"
++                type="email"
++                autoComplete="username"
++                required
++                value={email}
++                onChange={(e) => setEmail(e.currentTarget.value)}
++              />
++              <PasswordInput
++                label="パスワード"
++                autoComplete="current-password"
++                required
++                value={password}
++                onChange={(e) => setPassword(e.currentTarget.value)}
++              />
++              <Button type="submit" fullWidth size="md" loading={submitting}>
++                ログイン
++              </Button>
++            </Stack>
++          </form>
++        </Paper>
++      </Center>
++    </Box>
+   );
+ }
+diff --git a/components/Alert.tsx b/components/Alert.tsx
+index 1e611b8..8e01e36 100644
+--- a/components/Alert.tsx
++++ b/components/Alert.tsx
+@@ -1,24 +1,26 @@
++import { Alert, List } from "@mantine/core";
++
+ export function ErrorAlert({ message, details = [] }: { message: string | null; details?: string[] }) {
+   if (!message) return null;
+   return (
+-    <div role="alert" className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+-      <p>{message}</p>
++    <Alert role="alert" color="red" variant="light">
++      {message}
+       {details.length > 0 && (
+-        <ul className="mt-1 list-disc pl-5">
++        <List size="sm" mt={4}>
+           {details.map((d) => (
+-            <li key={d}>{d}</li>
++            <List.Item key={d}>{d}</List.Item>
+           ))}
+-        </ul>
++        </List>
+       )}
+-    </div>
++    </Alert>
+   );
+ }
+ 
+ export function SuccessAlert({ message }: { message: string | null }) {
+   if (!message) return null;
+   return (
+-    <div role="status" className="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
++    <Alert role="status" color="green" variant="light">
+       {message}
+-    </div>
++    </Alert>
+   );
+ }
+diff --git a/components/Analytics.tsx b/components/Analytics.tsx
+new file mode 100644
+index 0000000..5183c76
+--- /dev/null
++++ b/components/Analytics.tsx
+@@ -0,0 +1,60 @@
++"use client";
++
++import { Affix, Button, Group, Paper, Text } from "@mantine/core";
++import Script from "next/script";
++import { useEffect, useSyncExternalStore } from "react";
++import { GA_MEASUREMENT_ID, getConsent, initAnalytics, setConsent, subscribeConsent } from "@/lib/analytics";
++
++/** サーバー側の描画とハイドレーションの間は「まだ分からない」として、バナーもスクリプトも出さない */
++const UNKNOWN = "unknown" as const;
++
++function useConsent() {
++  return useSyncExternalStore(subscribeConsent, getConsent, () => UNKNOWN);
++}
++
++/**
++ * Google Analytics の同意バナーと読み込み。
++ * 同意するまでは gtag.js を読み込まない。同意したら（または以前に同意していたら）、
++ * 画面の表示が終わってから（afterInteractive）gtag.js を読み込んで計測を始める。
++ */
++export function Analytics() {
++  const consent = useConsent();
++  const granted = consent === "granted";
++
++  useEffect(() => {
++    if (granted) initAnalytics();
++  }, [granted]);
++
++  return (
++    <>
++      {granted && (
++        <Script
++          id="gtag-js"
++          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
++          strategy="afterInteractive"
++        />
++      )}
++      {consent === null && <ConsentBanner />}
++    </>
++  );
++}
++
++function ConsentBanner() {
++  return (
++    <Affix position={{ bottom: 16, left: 16, right: 16 }}>
++      <Paper withBorder shadow="md" p="md" maw={720} mx="auto" role="region" aria-label="アクセス解析への同意">
++        <Group justify="space-between" gap="md">
++          <Text size="sm" flex="1 1 20rem">
++            使い勝手の改善のため、Google Analytics で画面の利用状況（打刻の回数など）を計測します。同意いただいた場合にだけ計測を始めます。
++          </Text>
++          <Group gap="xs">
++            <Button variant="default" onClick={() => setConsent("denied")}>
++              同意しない
++            </Button>
++            <Button onClick={() => setConsent("granted")}>同意する</Button>
++          </Group>
++        </Group>
++      </Paper>
++    </Affix>
++  );
++}
+diff --git a/components/AppFrame.tsx b/components/AppFrame.tsx
+new file mode 100644
+index 0000000..658244a
+--- /dev/null
++++ b/components/AppFrame.tsx
+@@ -0,0 +1,20 @@
++"use client";
++
++import { AppShell, Container } from "@mantine/core";
++import { AppHeader } from "@/components/AppHeader";
++
++/** ログイン後の画面の枠（上部のヘッダーと本文）。 */
++export function AppFrame({ children }: { children: React.ReactNode }) {
++  return (
++    <AppShell header={{ height: 56 }} padding="xl">
++      <AppShell.Header>
++        <AppHeader />
++      </AppShell.Header>
++      <AppShell.Main>
++        <Container size="lg" px={0}>
++          {children}
++        </Container>
++      </AppShell.Main>
++    </AppShell>
++  );
++}
+diff --git a/components/AppHeader.tsx b/components/AppHeader.tsx
+index b4d5a82..f49f0c7 100644
+--- a/components/AppHeader.tsx
++++ b/components/AppHeader.tsx
+@@ -1,8 +1,10 @@
+ "use client";
+ 
++import { Badge, Button, Container, Group, Text } from "@mantine/core";
+ import Link from "next/link";
+ import { usePathname } from "next/navigation";
+ import { useEffect, useState } from "react";
++import { ColorSchemeToggle } from "@/components/ColorSchemeToggle";
+ import { apiFetch } from "@/lib/api-client";
+ import type { PublicUser } from "@/lib/types";
+ 
+@@ -41,45 +43,44 @@ export function AppHeader() {
+   }
+ 
+   return (
+-    <header className="border-b border-slate-200 bg-white">
+-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-8 px-6">
+-        <span className="font-bold text-slate-800">勤怠管理</span>
+-        <nav className="flex flex-1 gap-1">
++    <Container size="lg" h="100%">
++      <Group h="100%" gap="xl" wrap="nowrap">
++        <Text fw={700}>勤怠管理</Text>
++        <Group component="nav" gap={4} flex={1} wrap="nowrap">
+           {user &&
+             NAV[user.role].map((item) => {
+               const active = pathname === item.href;
+               return (
+-                <Link
++                <Button
+                   key={item.href}
++                  component={Link}
+                   href={item.href}
+-                  className={`rounded px-3 py-1.5 text-sm ${
+-                    active ? "bg-slate-800 text-white" : "text-slate-600 hover:bg-slate-100"
+-                  }`}
++                  variant={active ? "filled" : "subtle"}
++                  color={active ? undefined : "gray"}
++                  aria-current={active ? "page" : undefined}
+                 >
+                   {item.label}
+-                </Link>
++                </Button>
+               );
+             })}
+-        </nav>
+-        {user && (
+-          <div className="flex items-center gap-3 text-sm">
+-            <span className="text-slate-600">
+-              {user.name}
+-              <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
++        </Group>
++        <Group gap="sm" wrap="nowrap">
++          {user && (
++            <Group gap={6} wrap="nowrap">
++              <Text size="sm">{user.name}</Text>
++              <Badge variant="default" radius="sm">
+                 {user.role === "admin" ? "管理者" : "従業員"}
+-              </span>
+-            </span>
+-            <button
+-              type="button"
+-              onClick={logout}
+-              disabled={loggingOut}
+-              className="rounded border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+-            >
++              </Badge>
++            </Group>
++          )}
++          <ColorSchemeToggle />
++          {user && (
++            <Button variant="default" onClick={logout} loading={loggingOut}>
+               ログアウト
+-            </button>
+-          </div>
+-        )}
+-      </div>
+-    </header>
++            </Button>
++          )}
++        </Group>
++      </Group>
++    </Container>
+   );
+ }
+diff --git a/components/AttendanceEditor.tsx b/components/AttendanceEditor.tsx
+index b4f6903..83e5860 100644
+--- a/components/AttendanceEditor.tsx
++++ b/components/AttendanceEditor.tsx
+@@ -1,5 +1,8 @@
+ "use client";
+ 
++import { ActionIcon, Alert, Button, Group, Input, Modal, Stack, Text } from "@mantine/core";
++import { TimeInput } from "@mantine/dates";
++import { IconPlus, IconTrash } from "@tabler/icons-react";
+ import { useState } from "react";
+ import { ErrorAlert } from "@/components/Alert";
+ import { ApiError, apiFetch, errorMessage } from "@/lib/api-client";
+@@ -17,9 +20,10 @@ type Props = {
+ 
+ type BreakInput = { start: string; end: string };
+ 
+-const input = "rounded border border-slate-300 px-2 py-1.5 text-sm";
+-
+-/** 管理者が 1 日分の出勤・退勤・休憩を修正するフォーム。入力チェックはサーバー側で行い、結果をここに出す。 */
++/**
++ * 管理者が 1 日分の出勤・退勤・休憩を修正するモーダル。表示している間だけ描画する。
++ * 入力チェックはサーバー側で行い、結果をここに出す。
++ */
+ export function AttendanceEditor({ userId, userName, date, row, onCancel, onSaved }: Props) {
+   const [clockIn, setClockIn] = useState(row?.clockIn ?? "");
+   const [clockOut, setClockOut] = useState(row?.clockOut ?? "");
+@@ -30,6 +34,7 @@ export function AttendanceEditor({ userId, userName, date, row, onCancel, onSave
+   );
+   const [error, setError] = useState<{ message: string; details: string[] } | null>(null);
+   const [saving, setSaving] = useState(false);
++  const [confirmingDelete, setConfirmingDelete] = useState(false);
+ 
+   async function submit(body: { clockIn: string; clockOut: string; breaks: BreakInput[] }, successText: string) {
+     setSaving(true);
+@@ -43,6 +48,7 @@ export function AttendanceEditor({ userId, userName, date, row, onCancel, onSave
+     } catch (err) {
+       setError({ message: errorMessage(err), details: err instanceof ApiError ? err.details : [] });
+       setSaving(false);
++      setConfirmingDelete(false);
+     }
+   }
+ 
+@@ -53,98 +59,96 @@ export function AttendanceEditor({ userId, userName, date, row, onCancel, onSave
+   const title = `${userName}さん ${formatDateShort(date)} の勤怠`;
+ 
+   return (
+-    <section className="rounded-lg border border-sky-200 bg-sky-50/40 p-6">
+-      <h2 className="mb-4 font-semibold text-slate-800">{title}を修正</h2>
++    <Modal opened onClose={() => !saving && onCancel()} title={`${title}を修正`} size="lg">
+       <form
+         onSubmit={(e) => {
+           e.preventDefault();
+           submit({ clockIn, clockOut, breaks }, `${title}を保存しました。`);
+         }}
+-        className="space-y-4"
+       >
+-        {error && <ErrorAlert message={error.message} details={error.details} />}
+-        <div className="flex flex-wrap gap-6">
+-          <label className="text-sm">
+-            <span className="mb-1 block text-slate-600">出勤</span>
+-            <input type="time" value={clockIn} onChange={(e) => setClockIn(e.target.value)} className={input} />
+-          </label>
+-          <label className="text-sm">
+-            <span className="mb-1 block text-slate-600">退勤（空欄なら打刻漏れのまま）</span>
+-            <input type="time" value={clockOut} onChange={(e) => setClockOut(e.target.value)} className={input} />
+-          </label>
+-        </div>
++        <Stack>
++          {error && <ErrorAlert message={error.message} details={error.details} />}
++          <Group align="flex-start" grow>
++            <TimeInput label="出勤" value={clockIn} onChange={(e) => setClockIn(e.currentTarget.value)} />
++            <TimeInput
++              label="退勤"
++              description="空欄なら打刻漏れのまま"
++              inputWrapperOrder={["label", "input", "description", "error"]}
++              value={clockOut}
++              onChange={(e) => setClockOut(e.currentTarget.value)}
++            />
++          </Group>
+ 
+-        <div className="text-sm">
+-          <span className="mb-1 block text-slate-600">休憩</span>
+-          <div className="space-y-2">
+-            {breaks.map((b, i) => (
+-              <div key={i} className="flex items-center gap-2">
+-                <input
+-                  type="time"
+-                  value={b.start}
+-                  onChange={(e) => updateBreak(i, { start: e.target.value })}
+-                  className={input}
+-                  aria-label={`休憩${i + 1}の開始`}
+-                />
+-                <span>〜</span>
+-                <input
+-                  type="time"
+-                  value={b.end}
+-                  onChange={(e) => updateBreak(i, { end: e.target.value })}
+-                  className={input}
+-                  aria-label={`休憩${i + 1}の終了`}
+-                />
+-                <button
+-                  type="button"
+-                  onClick={() => setBreaks((prev) => prev.filter((_, j) => j !== i))}
+-                  className="text-xs text-slate-500 hover:text-red-600"
++          <Input.Wrapper label="休憩">
++            <Stack gap="xs" mt={4}>
++              {breaks.map((b, i) => (
++                <Group key={i} gap="xs" wrap="nowrap">
++                  <TimeInput
++                    value={b.start}
++                    onChange={(e) => updateBreak(i, { start: e.currentTarget.value })}
++                    aria-label={`休憩${i + 1}の開始`}
++                  />
++                  <Text>〜</Text>
++                  <TimeInput
++                    value={b.end}
++                    onChange={(e) => updateBreak(i, { end: e.currentTarget.value })}
++                    aria-label={`休憩${i + 1}の終了`}
++                  />
++                  <ActionIcon
++                    variant="subtle"
++                    color="gray"
++                    onClick={() => setBreaks((prev) => prev.filter((_, j) => j !== i))}
++                    aria-label={`休憩${i + 1}を削除`}
++                  >
++                    <IconTrash size={16} />
++                  </ActionIcon>
++                </Group>
++              ))}
++              <Group>
++                <Button
++                  variant="subtle"
++                  size="compact-sm"
++                  leftSection={<IconPlus size={14} />}
++                  onClick={() => setBreaks((prev) => [...prev, { start: "", end: "" }])}
+                 >
+-                  削除
+-                </button>
+-              </div>
+-            ))}
+-            <button
+-              type="button"
+-              onClick={() => setBreaks((prev) => [...prev, { start: "", end: "" }])}
+-              className="text-xs text-sky-700 hover:underline"
+-            >
+-              ＋ 休憩を追加
+-            </button>
+-          </div>
+-        </div>
++                  休憩を追加
++                </Button>
++              </Group>
++            </Stack>
++          </Input.Wrapper>
+ 
+-        <div className="flex items-center gap-3 pt-2">
+-          <button
+-            type="submit"
+-            disabled={saving}
+-            className="rounded bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+-          >
+-            保存
+-          </button>
+-          <button
+-            type="button"
+-            onClick={onCancel}
+-            disabled={saving}
+-            className="rounded border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50"
+-          >
+-            キャンセル
+-          </button>
+-          {row && (
+-            <button
+-              type="button"
+-              disabled={saving}
+-              onClick={() => {
+-                if (window.confirm(`${title}を削除します。よろしいですか？`)) {
+-                  submit({ clockIn: "", clockOut: "", breaks: [] }, `${title}を削除しました。`);
+-                }
+-              }}
+-              className="ml-auto text-sm text-red-600 hover:underline"
+-            >
+-              この日の勤怠を削除
+-            </button>
++          {confirmingDelete ? (
++            <Alert color="red" variant="light" title={`${title}を削除します。よろしいですか？`}>
++              <Group gap="xs" mt="xs">
++                <Button
++                  color="red"
++                  loading={saving}
++                  onClick={() => submit({ clockIn: "", clockOut: "", breaks: [] }, `${title}を削除しました。`)}
++                >
++                  削除する
++                </Button>
++                <Button variant="default" disabled={saving} onClick={() => setConfirmingDelete(false)}>
++                  やめる
++                </Button>
++              </Group>
++            </Alert>
++          ) : (
++            <Group gap="sm" pt="xs">
++              <Button type="submit" loading={saving}>
++                保存
++              </Button>
++              <Button variant="default" onClick={onCancel} disabled={saving}>
++                キャンセル
++              </Button>
++              {row && (
++                <Button variant="subtle" color="red" ml="auto" disabled={saving} onClick={() => setConfirmingDelete(true)}>
++                  この日の勤怠を削除
++                </Button>
++              )}
++            </Group>
+           )}
+-        </div>
++        </Stack>
+       </form>
+-    </section>
++    </Modal>
+   );
+ }
+diff --git a/components/AttendanceTable.tsx b/components/AttendanceTable.tsx
+index 30699ce..27a7592 100644
+--- a/components/AttendanceTable.tsx
++++ b/components/AttendanceTable.tsx
+@@ -1,5 +1,6 @@
+ "use client";
+ 
++import { Badge, Button, Paper, Table, Text } from "@mantine/core";
+ import { STATUS_LABEL } from "@/lib/attendance";
+ import { datesInMonth, dayOfWeek, formatDateShort, formatDuration } from "@/lib/time";
+ import type { AttendanceRow, MonthTotals } from "@/lib/types";
+@@ -13,97 +14,95 @@ type Props = {
+   editableUntil?: string;
+ };
+ 
+-const th = "border-b border-slate-200 px-3 py-2 text-left text-xs font-semibold text-slate-500";
+-const td = "border-b border-slate-100 px-3 py-2";
+-
+ function breakText(row: AttendanceRow): string {
+   if (row.breaks.length === 0) return "—";
+   return row.breaks.map((b) => `${b.start}〜${b.end ?? ""}`).join(", ");
+ }
+ 
++/** 土曜は青、日曜は赤（日付の文字色。ライト・ダークのどちらでも読める色をテーマから選ぶ） */
++function weekendColor(date: string): "red" | "blue" | undefined {
++  const w = dayOfWeek(date);
++  return w === 0 ? "red" : w === 6 ? "blue" : undefined;
++}
++
+ export function AttendanceTable({ month, rows, totals, onEdit, editableUntil }: Props) {
+   const byDate = new Map(rows.map((r) => [r.date, r]));
+ 
+   return (
+-    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+-      <table className="tabular w-full text-sm">
+-        <thead className="bg-slate-50">
+-          <tr>
+-            <th className={th}>日付</th>
+-            <th className={th}>出勤</th>
+-            <th className={th}>退勤</th>
+-            <th className={th}>休憩</th>
+-            <th className={`${th} text-right`}>休憩時間</th>
+-            <th className={`${th} text-right`}>実働時間</th>
+-            <th className={`${th} text-right`}>残業時間</th>
+-            <th className={th}>備考</th>
+-            {onEdit && <th className={th} />}
+-          </tr>
+-        </thead>
+-        <tbody>
+-          {datesInMonth(month).map((date) => {
+-            const row = byDate.get(date);
+-            const w = dayOfWeek(date);
+-            const weekendClass = w === 0 ? "bg-red-50/50" : w === 6 ? "bg-blue-50/50" : "";
+-            return (
+-              <tr key={date} className={weekendClass}>
+-                <td className={`${td} ${w === 0 ? "text-red-600" : w === 6 ? "text-blue-600" : ""}`}>
+-                  {formatDateShort(date)}
+-                </td>
+-                <td className={td}>{row?.clockIn ?? ""}</td>
+-                <td className={td}>{row ? (row.clockOut ?? "—") : ""}</td>
+-                <td className={`${td} text-slate-500`}>{row ? breakText(row) : ""}</td>
+-                <td className={`${td} text-right`}>{row ? formatDuration(row.breakMinutes) : ""}</td>
+-                <td className={`${td} text-right`}>
+-                  {row?.workMinutes != null ? formatDuration(row.workMinutes) : ""}
+-                </td>
+-                <td className={`${td} text-right`}>
+-                  {row?.overtimeMinutes != null ? formatDuration(row.overtimeMinutes) : ""}
+-                </td>
+-                <td className={td}>
+-                  {row && row.status === "missing_clock_out" && (
+-                    <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+-                      {STATUS_LABEL.missing_clock_out}
+-                    </span>
+-                  )}
+-                  {row && row.status === "in_progress" && (
+-                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+-                      {STATUS_LABEL.in_progress}
+-                    </span>
+-                  )}
+-                </td>
+-                {onEdit && (
+-                  <td className={`${td} text-right`}>
+-                    {(!editableUntil || date <= editableUntil) && (
+-                      <button
+-                        type="button"
+-                        onClick={() => onEdit(date, row)}
+-                        className="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-50"
+-                      >
+-                        修正
+-                      </button>
++    <Paper withBorder>
++      <Table.ScrollContainer minWidth={760}>
++        <Table>
++          <Table.Thead>
++            <Table.Tr>
++              <Table.Th>日付</Table.Th>
++              <Table.Th>出勤</Table.Th>
++              <Table.Th>退勤</Table.Th>
++              <Table.Th>休憩</Table.Th>
++              <Table.Th ta="right">休憩時間</Table.Th>
++              <Table.Th ta="right">実働時間</Table.Th>
++              <Table.Th ta="right">残業時間</Table.Th>
++              <Table.Th>備考</Table.Th>
++              {onEdit && <Table.Th />}
++            </Table.Tr>
++          </Table.Thead>
++          <Table.Tbody>
++            {datesInMonth(month).map((date) => {
++              const row = byDate.get(date);
++              const weekend = weekendColor(date);
++              return (
++                <Table.Tr key={date} bg={weekend && "var(--mantine-color-default-hover)"}>
++                  <Table.Td c={weekend}>{formatDateShort(date)}</Table.Td>
++                  <Table.Td>{row?.clockIn ?? ""}</Table.Td>
++                  <Table.Td>{row ? (row.clockOut ?? "—") : ""}</Table.Td>
++                  <Table.Td c="dimmed">{row ? breakText(row) : ""}</Table.Td>
++                  <Table.Td ta="right">{row ? formatDuration(row.breakMinutes) : ""}</Table.Td>
++                  <Table.Td ta="right">{row?.workMinutes != null ? formatDuration(row.workMinutes) : ""}</Table.Td>
++                  <Table.Td ta="right">
++                    {row?.overtimeMinutes != null ? formatDuration(row.overtimeMinutes) : ""}
++                  </Table.Td>
++                  <Table.Td>
++                    {row && row.status === "missing_clock_out" && (
++                      <Badge color="red" variant="light">
++                        {STATUS_LABEL.missing_clock_out}
++                      </Badge>
++                    )}
++                    {row && row.status === "in_progress" && (
++                      <Badge color="yellow" variant="light">
++                        {STATUS_LABEL.in_progress}
++                      </Badge>
+                     )}
+-                  </td>
++                  </Table.Td>
++                  {onEdit && (
++                    <Table.Td ta="right">
++                      {(!editableUntil || date <= editableUntil) && (
++                        <Button size="compact-xs" variant="default" onClick={() => onEdit(date, row)}>
++                          修正
++                        </Button>
++                      )}
++                    </Table.Td>
++                  )}
++                </Table.Tr>
++              );
++            })}
++          </Table.Tbody>
++          <Table.Tfoot fw={700}>
++            <Table.Tr>
++              <Table.Td>合計</Table.Td>
++              <Table.Td colSpan={3}>出勤日数 {totals.workDays} 日</Table.Td>
++              <Table.Td ta="right">{formatDuration(totals.breakMinutes)}</Table.Td>
++              <Table.Td ta="right">{formatDuration(totals.workMinutes)}</Table.Td>
++              <Table.Td ta="right">{formatDuration(totals.overtimeMinutes)}</Table.Td>
++              <Table.Td colSpan={onEdit ? 2 : 1}>
++                {totals.missingCount > 0 && (
++                  <Text span inherit c="red">
++                    打刻漏れ {totals.missingCount} 件
++                  </Text>
+                 )}
+-              </tr>
+-            );
+-          })}
+-        </tbody>
+-        <tfoot className="bg-slate-50 font-semibold">
+-          <tr>
+-            <td className="px-3 py-2">合計</td>
+-            <td className="px-3 py-2" colSpan={3}>
+-              出勤日数 {totals.workDays} 日
+-            </td>
+-            <td className="px-3 py-2 text-right">{formatDuration(totals.breakMinutes)}</td>
+-            <td className="px-3 py-2 text-right">{formatDuration(totals.workMinutes)}</td>
+-            <td className="px-3 py-2 text-right">{formatDuration(totals.overtimeMinutes)}</td>
+-            <td className="px-3 py-2" colSpan={onEdit ? 2 : 1}>
+-              {totals.missingCount > 0 && <span className="text-red-700">打刻漏れ {totals.missingCount} 件</span>}
+-            </td>
+-          </tr>
+-        </tfoot>
+-      </table>
+-    </div>
++              </Table.Td>
++            </Table.Tr>
++          </Table.Tfoot>
++        </Table>
++      </Table.ScrollContainer>
++    </Paper>
+   );
+ }
+diff --git a/components/ColorSchemeToggle.tsx b/components/ColorSchemeToggle.tsx
+new file mode 100644
+index 0000000..99ebdf3
+--- /dev/null
++++ b/components/ColorSchemeToggle.tsx
+@@ -0,0 +1,27 @@
++"use client";
++
++import { ActionIcon, Box, Tooltip, useMantineColorScheme } from "@mantine/core";
++import { IconMoon, IconSun } from "@tabler/icons-react";
++
++const LABEL = "ライトモード・ダークモードを切り替える";
++
++/**
++ * ライトモードとダークモードを切り替えるボタン。選んだモードはブラウザに保存される。
++ * 今のモードはサーバーでは分からないので、ラベルは固定にし、アイコンの出し分けは CSS（lightHidden / darkHidden）に任せる。
++ */
++export function ColorSchemeToggle() {
++  const { toggleColorScheme } = useMantineColorScheme();
++
++  return (
++    <Tooltip label={LABEL}>
++      <ActionIcon variant="default" size="lg" aria-label={LABEL} onClick={toggleColorScheme}>
++        <Box component="span" lightHidden>
++          <IconSun size={18} stroke={1.5} display="block" />
++        </Box>
++        <Box component="span" darkHidden>
++          <IconMoon size={18} stroke={1.5} display="block" />
++        </Box>
++      </ActionIcon>
++    </Tooltip>
++  );
++}
+diff --git a/components/Loading.tsx b/components/Loading.tsx
+index f968b54..f7bc71f 100644
+--- a/components/Loading.tsx
++++ b/components/Loading.tsx
+@@ -1,3 +1,12 @@
++import { Group, Loader, Text } from "@mantine/core";
++
+ export function Loading() {
+-  return <p className="text-sm text-slate-500">読み込み中…</p>;
++  return (
++    <Group gap="xs">
++      <Loader size="xs" />
++      <Text size="sm" c="dimmed">
++        読み込み中…
++      </Text>
++    </Group>
++  );
+ }
+diff --git a/components/MonthPicker.tsx b/components/MonthPicker.tsx
+index 35b9252..7c2d6a0 100644
+--- a/components/MonthPicker.tsx
++++ b/components/MonthPicker.tsx
+@@ -1,24 +1,37 @@
+ "use client";
+ 
++import { Button, Group } from "@mantine/core";
++import { MonthPickerInput } from "@mantine/dates";
++import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+ import { addMonths } from "@/lib/time";
+ 
++/** 月（YYYY-MM）を選ぶ。前月・翌月のボタンと、カレンダーから選ぶ入力欄。 */
+ export function MonthPicker({ value, onChange }: { value: string; onChange: (month: string) => void }) {
+-  const button = "rounded border border-slate-300 bg-white px-2.5 py-1.5 text-sm hover:bg-slate-50";
+   return (
+-    <div className="flex items-center gap-2">
+-      <button type="button" className={button} onClick={() => onChange(addMonths(value, -1))} aria-label="前の月">
+-        ◀ 前月
+-      </button>
+-      <input
+-        type="month"
+-        value={value}
+-        onChange={(e) => e.target.value && onChange(e.target.value)}
+-        className="rounded border border-slate-300 bg-white px-2 py-1.5 text-sm"
++    <Group gap="xs" wrap="nowrap">
++      <Button
++        variant="default"
++        leftSection={<IconChevronLeft size={16} />}
++        onClick={() => onChange(addMonths(value, -1))}
++        aria-label="前の月"
++      >
++        前月
++      </Button>
++      <MonthPickerInput
++        value={`${value}-01`}
++        onChange={(date) => date && onChange(date.slice(0, 7))}
++        valueFormat="YYYY年M月"
+         aria-label="表示する月"
++        w={130}
+       />
+-      <button type="button" className={button} onClick={() => onChange(addMonths(value, 1))} aria-label="次の月">
+-        翌月 ▶
+-      </button>
+-    </div>
++      <Button
++        variant="default"
++        rightSection={<IconChevronRight size={16} />}
++        onClick={() => onChange(addMonths(value, 1))}
++        aria-label="次の月"
++      >
++        翌月
++      </Button>
++    </Group>
+   );
+ }
+diff --git a/components/PageTitle.tsx b/components/PageTitle.tsx
+index 7376f95..f71b06d 100644
+--- a/components/PageTitle.tsx
++++ b/components/PageTitle.tsx
+@@ -1,8 +1,12 @@
++import { Group, Title } from "@mantine/core";
++
+ export function PageTitle({ children, actions }: { children: React.ReactNode; actions?: React.ReactNode }) {
+   return (
+-    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+-      <h1 className="text-xl font-bold text-slate-800">{children}</h1>
++    <Group justify="space-between" gap="md" mb="lg">
++      <Title order={1} size="h3">
++        {children}
++      </Title>
+       {actions}
+-    </div>
++    </Group>
+   );
+ }
+diff --git a/components/Providers.tsx b/components/Providers.tsx
+new file mode 100644
+index 0000000..b7523c6
+--- /dev/null
++++ b/components/Providers.tsx
+@@ -0,0 +1,15 @@
++"use client";
++
++import { MantineProvider } from "@mantine/core";
++import { DatesProvider } from "@mantine/dates";
++import "dayjs/locale/ja";
++import { theme } from "@/components/theme";
++
++/** 全画面で使う UI の設定（テーマ、ライト・ダーク、日付部品の言語）。 */
++export function Providers({ children }: { children: React.ReactNode }) {
++  return (
++    <MantineProvider theme={theme} defaultColorScheme="auto">
++      <DatesProvider settings={{ locale: "ja", firstDayOfWeek: 0, weekendDays: [0, 6] }}>{children}</DatesProvider>
++    </MantineProvider>
++  );
++}
+diff --git a/components/theme.ts b/components/theme.ts
+new file mode 100644
+index 0000000..f751168
+--- /dev/null
++++ b/components/theme.ts
+@@ -0,0 +1,64 @@
++// 画面全体の見た目（Mantine のテーマ）。色・角の丸み・書体・表の詰め具合はここで一括して決める。
++// 部品ごとに className や style で上書きせず、変えたいときはこのファイルを直す。
++
++import { createTheme, Table, TableScrollContainer, virtualColor, type MantineColorsTuple } from "@mantine/core";
++
++/**
++ * ブランドカラー #0F766E を 7 番目に置いた 10 段階の色。
++ * 0 が最も明るく、9 が最も暗い。
++ */
++const brand: MantineColorsTuple = [
++  "#f0fdfa",
++  "#ccfbf1",
++  "#99f6e4",
++  "#5eead4",
++  "#2dd4bf",
++  "#14b8a6",
++  "#0d9488",
++  "#0f766e", // ブランドカラー
++  "#115e59",
++  "#134e4a",
++];
++
++/** 本文の書体。next/font で読み込んだ Noto Sans JP を CSS 変数で受け取る（app/layout.tsx）。 */
++const fontFamily =
++  'var(--font-noto-sans-jp), "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif';
++
++export const theme = createTheme({
++  colors: {
++    brand,
++    // 主色。ライト・ダークで同じ brand を指す「仮想の色」にしておくと、
++    // ボタンの文字色（白か黒か）をモードごとに選び直してくれる。
++    primary: virtualColor({ name: "primary", light: "brand", dark: "brand" }),
++  },
++  primaryColor: "primary",
++  // ライトモードはブランドカラーそのもの（白文字とのコントラスト 5.5:1）。
++  // ダークモードは暗い背景で沈まないよう明るい段階にする（背景とのコントラスト 6.2:1、黒文字とのコントラスト 8.4:1）。
++  primaryShade: { light: 7, dark: 5 },
++  // 明るい色のボタンでは文字を黒にする（ダークモードの主色のボタンで効く）
++  autoContrast: true,
++
++  // ボタン・入力欄・カードなどの角の丸みを 4px にそろえる
++  radius: { xs: "2px", sm: "4px" },
++  defaultRadius: "sm",
++
++  fontFamily,
++  headings: { fontFamily },
++
++  components: {
++    // 表は行の高さを詰めて、1 画面に多くの行を出す
++    Table: Table.extend({
++      defaultProps: {
++        verticalSpacing: 4,
++        horizontalSpacing: "sm",
++        fz: "sm",
++        tabularNums: true,
++        highlightOnHover: true,
++      },
++    }),
++    // 横にはみ出す表はブラウザ標準のスクロールにする（独自スクロールバーぶんの余白を表の下に作らない）
++    TableScrollContainer: TableScrollContainer.extend({
++      defaultProps: { type: "native" },
++    }),
++  },
++});
+diff --git a/lib/analytics.ts b/lib/analytics.ts
+new file mode 100644
+index 0000000..49ce340
+--- /dev/null
++++ b/lib/analytics.ts
+@@ -0,0 +1,84 @@
++// Google Analytics（gtag.js）の同意管理とイベント送信（ブラウザでだけ使う）。
++// 利用者が同意するまでは gtag.js を読み込まず、dataLayer も作らないので、計測は一切送らない。
++
++import { PUNCH_LABEL } from "./punch";
++import type { PunchAction } from "./types";
++
++export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-XXXXXXXXXX";
++
++export type AnalyticsConsent = "granted" | "denied";
++
++const CONSENT_KEY = "analytics-consent";
++const CONSENT_EVENT = "analytics-consent-change";
++
++type Gtag = (...args: unknown[]) => void;
++
++declare global {
++  interface Window {
++    dataLayer?: unknown[];
++    gtag?: Gtag;
++  }
++}
++
++/** 保存された同意の状態。まだ選んでいなければ null。 */
++export function getConsent(): AnalyticsConsent | null {
++  try {
++    const value = window.localStorage.getItem(CONSENT_KEY);
++    return value === "granted" || value === "denied" ? value : null;
++  } catch {
++    // プライベートモードなどで localStorage が使えないときは、未選択として扱う
++    return null;
++  }
++}
++
++export function setConsent(consent: AnalyticsConsent): void {
++  try {
++    window.localStorage.setItem(CONSENT_KEY, consent);
++  } catch {
++    // 保存できなくても、この画面を開いている間は選んだ状態で動かす
++  }
++  window.dispatchEvent(new CustomEvent<AnalyticsConsent>(CONSENT_EVENT, { detail: consent }));
++}
++
++/** 同意の状態の変化を購読する（useSyncExternalStore 用）。別のタブでの変更も拾う。 */
++export function subscribeConsent(onChange: () => void): () => void {
++  const onStorage = (e: StorageEvent) => e.key === CONSENT_KEY && onChange();
++  window.addEventListener(CONSENT_EVENT, onChange);
++  window.addEventListener("storage", onStorage);
++  return () => {
++    window.removeEventListener(CONSENT_EVENT, onChange);
++    window.removeEventListener("storage", onStorage);
++  };
++}
++
++/**
++ * gtag を用意して初期設定を積む。同意したあとに一度だけ呼ぶ。
++ * gtag.js 本体は、この後に読み込まれたときに dataLayer に積まれた命令を順に送る。
++ */
++export function initAnalytics(measurementId: string = GA_MEASUREMENT_ID): void {
++  if (window.gtag) return;
++  window.dataLayer = window.dataLayer || [];
++  // gtag.js は配列ではなく arguments オブジェクトが積まれることを前提にしている
++  window.gtag = function gtag() {
++    // eslint-disable-next-line prefer-rest-params
++    window.dataLayer!.push(arguments);
++  };
++  // 同意を得たのはアクセス解析だけなので、広告に関わる保存・利用は拒否のままにする
++  window.gtag("consent", "default", {
++    analytics_storage: "granted",
++    ad_storage: "denied",
++    ad_user_data: "denied",
++    ad_personalization: "denied",
++  });
++  window.gtag("js", new Date());
++  window.gtag("config", measurementId);
++}
++
++/** 打刻したことを送る。同意していなければ何もしない。 */
++export function trackPunch(action: PunchAction): void {
++  if (getConsent() !== "granted" || !window.gtag) return;
++  window.gtag("event", "punch", {
++    punch_type: PUNCH_LABEL[action],
++    punch_action: action,
++  });
++}
+diff --git a/next.config.ts b/next.config.ts
+index a0cf0c7..8ce38cb 100644
+--- a/next.config.ts
++++ b/next.config.ts
+@@ -4,13 +4,9 @@ const nextConfig: NextConfig = {
+   /* config options here */
+   cacheComponents: true,
+   partialPrefetching: true,
+-  turbopack: {
+-    rules: {
+-      "*.css": {
+-        loaders: ["@tailwindcss/turbopack"],
+-        as: "*.css",
+-      },
+-    },
++  experimental: {
++    // Mantine は部品ごとのファイルが多いので、使っている部品だけを読み込む（@tabler/icons-react は既定で対象）
++    optimizePackageImports: ["@mantine/core", "@mantine/dates", "@mantine/hooks"],
+   },
+ };
+ 
+diff --git a/package.json b/package.json
+index 673641c..ff59aff 100644
+--- a/package.json
++++ b/package.json
+@@ -8,21 +8,25 @@
+     "start": "next start",
+     "lint": "eslint",
+     "test": "vitest run",
+-    "typecheck": "next typegen && tsc --noEmit"
++    "typecheck": "next typegen && tsc --noEmit",
++    "lint:fix": "eslint --fix"
+   },
+   "dependencies": {
++    "@mantine/core": "^9.7.3",
++    "@mantine/dates": "^9.7.3",
++    "@mantine/hooks": "^9.7.3",
++    "@tabler/icons-react": "^3.49.0",
++    "dayjs": "^1.11.23",
+     "next": "16.4.2",
+     "react": "19.3.0",
+     "react-dom": "19.3.0"
+   },
+   "devDependencies": {
+-    "@tailwindcss/turbopack": "^4",
+     "@types/node": "^24.19.2",
+     "@types/react": "^19",
+     "@types/react-dom": "^19",
+     "eslint": "^9",
+     "eslint-config-next": "16.4.2",
+-    "tailwindcss": "^4",
+     "typescript": "^5",
+     "vitest": "^5.0.5"
+   }
+diff --git a/tests/analytics.test.ts b/tests/analytics.test.ts
+new file mode 100644
+index 0000000..f08918d
+--- /dev/null
++++ b/tests/analytics.test.ts
+@@ -0,0 +1,94 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { getConsent, initAnalytics, setConsent, trackPunch } from "@/lib/analytics";
++
++type FakeWindow = {
++  dataLayer?: unknown[];
++  gtag?: (...args: unknown[]) => void;
++  localStorage: Pick<Storage, "getItem" | "setItem">;
++  dispatchEvent: (e: Event) => boolean;
++};
++
++let win: FakeWindow;
++
++beforeEach(() => {
++  const store = new Map<string, string>();
++  win = {
++    localStorage: {
++      getItem: (k) => store.get(k) ?? null,
++      setItem: (k, v) => void store.set(k, v),
++    },
++    dispatchEvent: () => true,
++  };
++  vi.stubGlobal("window", win);
++});
++
++afterEach(() => {
++  vi.unstubAllGlobals();
++});
++
++/** dataLayer に積まれた命令を配列にして返す（gtag は arguments オブジェクトを積む） */
++function commands(): unknown[][] {
++  return (win.dataLayer ?? []).map((args) => Array.from(args as ArrayLike<unknown>));
++}
++
++describe("同意の状態", () => {
++  it("まだ選んでいなければ null", () => {
++    expect(getConsent()).toBeNull();
++  });
++
++  it("選んだ状態を保存して読み出せる", () => {
++    setConsent("granted");
++    expect(getConsent()).toBe("granted");
++    setConsent("denied");
++    expect(getConsent()).toBe("denied");
++  });
++
++  it("想定外の値が保存されていたら未選択として扱う", () => {
++    win.localStorage.setItem("analytics-consent", "yes");
++    expect(getConsent()).toBeNull();
++  });
++});
++
++describe("打刻イベント", () => {
++  it("同意する前は何も送らない（dataLayer も作らない）", () => {
++    trackPunch("clock_in");
++    expect(win.dataLayer).toBeUndefined();
++  });
++
++  it("同意しなかったら何も送らない", () => {
++    setConsent("denied");
++    trackPunch("clock_in");
++    expect(win.dataLayer).toBeUndefined();
++  });
++
++  it("同意したら、初期設定のあとに punch イベントを種類つきで送る", () => {
++    setConsent("granted");
++    initAnalytics("G-TEST");
++    trackPunch("break_start");
++
++    const sent = commands();
++    expect(sent).toContainEqual(["config", "G-TEST"]);
++    expect(sent.at(-1)).toEqual(["event", "punch", { punch_type: "休憩開始", punch_action: "break_start" }]);
++  });
++
++  it("4 種類の打刻をそれぞれの名前で送る", () => {
++    setConsent("granted");
++    initAnalytics("G-TEST");
++    trackPunch("clock_in");
++    trackPunch("break_start");
++    trackPunch("break_end");
++    trackPunch("clock_out");
++
++    const types = commands()
++      .filter((c) => c[0] === "event" && c[1] === "punch")
++      .map((c) => (c[2] as { punch_type: string }).punch_type);
++    expect(types).toEqual(["出勤", "休憩開始", "休憩終了", "退勤"]);
++  });
++
++  it("初期設定は一度だけ行う", () => {
++    setConsent("granted");
++    initAnalytics("G-TEST");
++    initAnalytics("G-TEST");
++    expect(commands().filter((c) => c[0] === "config")).toHaveLength(1);
++  });
++});

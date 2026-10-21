@@ -17,6 +17,9 @@
 | `nuxt/run-1/`、`nuxt/run-2/` | Nuxtで作らせたアプリ（作業フォルダから、判定後にコピーしたもの） |
 | `next/run-1/`、`next/run-2/` | Next.jsで作らせたアプリ |
 | `../results/experiment/` | 1回ごとの計測記録（JSON）と、まとめたレポート |
+| `../results/experiment/*-add.diff` | 2段目で変更したコードの差分（ロックファイルを除く） |
+
+検証の作業フォルダ（`~/dev/inhouse/febi-nuxt-experiment/`）は、アプリと差分をこのリポジトリにコピーしたあと削除しました（2026-10-21）。`.env`はセッション鍵を含むため、コピーしていません。
 
 ## 1回の実行の流れ
 
