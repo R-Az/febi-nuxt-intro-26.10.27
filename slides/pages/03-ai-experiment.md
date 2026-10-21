@@ -124,7 +124,7 @@ style: "--accent: var(--cyan)"
 
 # ① 作る：Nuxtの方が書く量が少なかった
 
-<div class="sub">各2回の平均（1つのモデル）。どちらも人の介入なしで、受け入れ条件12件をすべて満たした</div>
+<div class="sub">各2回の平均（モデルは1種類）。どちらも人の介入なしで、受け入れ条件12件をすべて満たした</div>
 
 | 指標 | Nuxt | Next.js | Nuxt / Next.js |
 |---|--:|--:|--:|
@@ -134,7 +134,7 @@ style: "--accent: var(--cyan)"
 | コード行数 | 2,183 | 2,764 | 約0.8倍 |
 | importの行数 | 45 | 170 | 約0.25倍 |
 
-<div v-click class="punch">書く量もコストも、Nuxtの方が少なく済んだ</div>
+<div v-click class="punch">書く量もコストも、Nuxtの方が少なく済みました</div>
 
 <div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/blob/master/results/experiment/summary.md" target="_blank">GitHub：results/experiment/summary.md</a></div>
 
@@ -162,9 +162,9 @@ class: roomy
 
 ---
 
-# AIもモジュールを選んでいた
+# AIも用意された仕組みを選んでいた
 
-<div class="sub">同じ要件に、Nuxtはモジュールで、Next.jsは自前のコードで応えた</div>
+<div class="sub">同じ要件に、Nuxtはモジュールと組み込みの機能で、Next.jsは自前のコードで応えた</div>
 
 | 要件 | Nuxt（2回とも） | Next.js（2回とも） |
 |---|---|---|
@@ -172,7 +172,7 @@ class: roomy
 | 毎日0時の定期処理 | Nitro Tasks（`scheduledTasks`） | 自前のタイマー（1回目はVercelのcron設定も追加） |
 | 単体テスト | Vitest | Vitest |
 
-<div v-click class="punch">決まった置き場所と定番のモジュールがあると、AIもそれを使う</div>
+<div v-click class="punch">今回の2回では、AIも決まった置き場所と定番のモジュールをそのまま使いました</div>
 
 <div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/tree/master/experiment" target="_blank">GitHub：作られたアプリのコード（experiment/nuxt、experiment/next）</a></div>
 
@@ -180,7 +180,7 @@ class: roomy
 
 # ② 足す：手間はほぼ同じだった
 
-<div class="sub">UI部品・カスタマイズ・Lint・GAを足させた。2回の平均で、どちらも条件18件をすべて満たした</div>
+<div class="sub">UI部品・カスタマイズ・Lint・GAを足させた。どちらも①の12件と②の6件、計18件をすべて満たした</div>
 
 | 指標 | Nuxt | Next.js |
 |---|--:|--:|
@@ -189,7 +189,7 @@ class: roomy
 | 所要時間（分） | 13.3 | 12.7 |
 | 設定・つなぎ込みの追加行数 | 172 | 206 |
 
-- **足したもの**：NuxtはNuxt UIとモジュール、Next.jsはMantineと既存のLint設定、自前のコード
+- **足したもの**：NuxtはNuxt UIと@nuxt/eslint、Next.jsはMantineと既存のLint設定。GAは回によってモジュール、公式パッケージ、自前のコードに分かれた
 - **見た目の設定**：行数はNuxt UIが半分以下。ただしフレームワークよりUIライブラリの差
 
 <div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/blob/master/results/experiment/summary.md" target="_blank">GitHub：results/experiment/summary.md</a></div>
@@ -209,7 +209,7 @@ style: "--accent: var(--cyan)"
 <div class="card">
 <div class="col-h">① 作る</div>
 
-出力トークンは約0.8倍、コストは約0.65倍、importは約4分の1。認証と定期処理はモジュールに任せていた
+出力トークンは約0.8倍、コストは約0.65倍、importは約4分の1。認証はモジュール、定期処理は組み込みのNitro Tasksに任せていた
 
 </div>
 <div class="card">
@@ -225,6 +225,7 @@ style: "--accent: var(--cyan)"
 - 各フレームワーク2回、1つのモデルでの結果なので、傾向として読んでほしい
 - AIの学習データの量（Next.jsの方が多い）はそろえられない
 - 判定もAI（画面の操作とコマンド）で、人による確認はしていない
+- 組み込みのブラウザとスキルは、両方のセッションで使える状態だった
 - 依存の数はNuxtの方が多い（型チェック用のパッケージを自分で追加したため）
 
 </div>

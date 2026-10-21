@@ -24,7 +24,7 @@ class: roomy
 - **Server Functions**：フォームの送信などを、APIのURLを作らずに関数として呼べる
 - **React Native**：モバイルアプリと、知識やコードを共有しやすい
 
-<div v-click class="punch">作るものとチームに合わせて選べばいい</div>
+<div v-click class="punch">作るものとチームに合わせて選べば大丈夫です</div>
 
 <div class="source"><lucide-link /><a href="https://nextjs.org/docs/app/getting-started/server-and-client-components" target="_blank">Next.js：Server and Client Components</a>・<a href="https://nextjs.org/docs/app/getting-started/mutating-data" target="_blank">Next.js：Mutating Data</a></div>
 
@@ -32,7 +32,7 @@ class: roomy
 
 # つまずきやすいところの違い：VueとReact
 
-<div class="sub">「画面が更新されない」「何度も動く」は、Reactで起きやすい</div>
+<div class="sub">「画面が更新されない」「何度も動く」は、Reactでは描画の仕組みを意識しないと起きやすい</div>
 
 <div class="cols">
 <div class="card">
@@ -70,7 +70,7 @@ watch(filter, () => load(filter), {
 </div>
 
 - **①**：Reactは新しい値を作ってsetし直す。Vueは書き換えを自動で検出する
-- **②**：Reactは描画のたびに関数が動き直す。React Compiler（2025.10に安定版）は、手で書いていたメモ化を自動で行う
+- **②**：Reactは描画のたびに関数が動き直す。正しくは<code>[month]</code>を依存にする。React Compiler（2025.10安定版）でメモ化の多くは自動になる
 
 <div class="source"><lucide-link /><a href="https://ja.react.dev/learn/updating-objects-in-state" target="_blank">React：state内のオブジェクトの更新</a>・<a href="https://ja.react.dev/learn/removing-effect-dependencies" target="_blank">React：エフェクトから依存値を取り除く</a>・<a href="https://ja.vuejs.org/guide/essentials/reactivity-fundamentals" target="_blank">Vue.js：リアクティビティーの基礎</a>・<a href="https://react.dev/blog/2025/10/07/react-compiler-1" target="_blank">React Blog：React Compiler v1.0</a></div>
 
@@ -85,7 +85,7 @@ watch(filter, () => load(filter), {
 <div class="col-h">速度の差は、決め手になりにくい</div>
 
 - 手元の業務アプリの規模では、フレームワークの差より、APIやデータ量の差の方が大きいと感じている
-- 少なくともSPAなら、極端に重くしない限り体感の差は出にくい
+- 社内ツールの規模なら、極端に重くしない限り体感の差は出にくい
 
 </div>
 <div class="card">
@@ -103,7 +103,7 @@ watch(filter, () => load(filter), {
 
 # 私の考え（2）：扱いやすさ <span class="badge" style="--c: var(--orange)">私見</span>
 
-<div class="sub">業務アプリを素早く作るなら、Nuxtは扱いやすい</div>
+<div class="sub">決まっていることが多いので、業務アプリを素早く作りやすい</div>
 
 <div class="cols">
 <div class="card">
@@ -114,7 +114,7 @@ watch(filter, () => load(filter), {
 
 </div>
 <div class="card">
-<div class="col-h">ライフサイクルが素直</div>
+<div class="col-h">更新の仕組みが素直</div>
 
 - 「画面が更新されない」「何度も動く」でつまずくことが少ない
 - 業務アプリなら、Reactほど細かい管理は要らない
@@ -146,7 +146,7 @@ style: "--accent: var(--orange)"
 
 - **PoC・検証**：まず動く形を早く見せたい
 - **社内ツール・管理画面**：テンプレートとUI部品で足りる
-- **少人数の業務アプリ**：画面とAPIを1つのリポジトリで回したい
+- **少人数の業務アプリ**：画面とAPIを1つのサーバーで済ませたい
 - **Vueに慣れたチーム**：今の知識がそのまま使える
 
 </div>

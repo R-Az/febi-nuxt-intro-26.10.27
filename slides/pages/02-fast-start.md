@@ -8,7 +8,7 @@ style: "--accent: var(--green)"
 
 # テンプレートとモジュール
 
-<div class="section-sub">テンプレートから始めて、要るものはモジュールで足す</div>
+<div class="section-sub">始め方も足し方も決まっていて、悩むところが少ない</div>
 
 ---
 class: roomy
@@ -16,7 +16,7 @@ class: roomy
 
 # テンプレートから1コマンドで始める
 
-<div class="sub">テンプレートを指定すると、画面ができた状態から始まる</div>
+<div class="sub">テンプレートを選べば、画面の作りから考えなくていい</div>
 
 ```bash
 # 何も入っていない状態から
@@ -63,7 +63,7 @@ cd demo && pnpm dev
 </div>
 </div>
 
-<div class="source"><lucide-link /><a href="https://ui.nuxt.com/templates" target="_blank">Nuxt UI：Templates</a>・<a href="https://nuxt.com/docs/4.x/api/commands/init" target="_blank">Nuxt：nuxt init</a></div>
+<div class="source"><lucide-link /><a href="https://ui.nuxt.com/templates" target="_blank">Nuxt UI：Templates</a>・<a href="https://nuxt.com/docs/4.x/api/commands/init" target="_blank">Nuxt：create nuxt</a></div>
 
 <style>
 .shot img { width: 26rem; border: 1px solid var(--border); border-radius: 0.5rem; }
@@ -73,7 +73,7 @@ cd demo && pnpm dev
 
 # ライブデモ：Lintも最初から使える
 
-<div class="sub">テンプレートに@nuxt/eslintが入っているので、設定を書かずにTypeScriptとVueのルールが効く</div>
+<div class="sub">ルールを一から決めなくていい。@nuxt/eslintで、TypeScriptとVueのルールが最初から効く</div>
 
 <div class="cols">
 <div>
@@ -116,9 +116,9 @@ const count: any = ref(0)
 class: roomy
 ---
 
-# Nuxt UI：公式のUI部品
+# Nuxt UI：UIライブラリで悩まない
 
-<div class="sub">業務アプリでよく使う部品が、最初からそろっている</div>
+<div class="sub">公式のUIライブラリがあるので、まずはこれを使えます</div>
 
 <div class="cols middle">
 <div>
@@ -135,6 +135,7 @@ class: roomy
 <div>
 
 - **部品**：ボタン、フォーム、テーブル、モーダルなど100以上
+- **選ぶ手間**：Vueにも候補は多いが、公式があるので最初の1つで迷いにくい
 - **テンプレート**：さっきのテンプレートも、この部品で作られている
 - **費用**：v4で有料版（Pro）を統合し、無料のOSSになった
 
@@ -170,7 +171,7 @@ export default defineNuxtConfig({
 
 - **インストール**：パッケージを依存関係に追加する
 - **設定**：`nuxt.config.ts`の`modules`に自動で書き足す
-- **手順**：どのモジュールでも同じ
+- **手順**：どのモジュールでも同じなので、入れ方で悩まない
 
 </div>
 </div>
@@ -188,11 +189,12 @@ export default defineNuxtConfig({
 
 <div class="where"><lucide-server /> server/api/login.post.ts（自分で書く）</div>
 
-```ts {3-4|5-6|7-8}
+```ts {3-4|5-7|8-9}
 export default defineEventHandler(async (e) => {
   const { email, password } = await readBody(e)
-  // 保存先からの取得と照合は自分で書く
+  // ユーザーの取得は自分で書く
   const user = await findUser(email)
+  // 照合はモジュールのverifyPassword
   const ok = user && await verifyPassword(user.hash, password)
   if (!ok) throw createError({ statusCode: 401 })
   // 暗号化してCookieに保存するのはモジュール
@@ -215,7 +217,7 @@ export default defineEventHandler(async (e) => {
 <div class="card" style="margin-top: 0.8rem">
 <div class="col-h">自分で書く</div>
 
-- ユーザーの保存と照合
+- ユーザーの保存と取得
 - ログインのAPIと画面
 - ログイン必須にするページ
 
@@ -231,9 +233,9 @@ export default defineEventHandler(async (e) => {
 
 ---
 
-# TypeScriptの設定を、モジュールに任せる
+# LintとGAの設定も、モジュールに任せる
 
-<div class="sub">TypeScriptのプロジェクトは設定ファイルが増えやすい。デモのLintも、この仕組みで動いていた</div>
+<div class="sub">設定ファイルの中身を自分で考えなくていい。デモのLintも、この仕組みで動いていた</div>
 
 <div class="cols">
 <div class="card">
@@ -321,7 +323,7 @@ style: "--accent: var(--green)"
 
 # テンプレートで始めて、モジュールで足す
 
-<div class="sub">立ち上げの手順と、機能の足し方が決まっている</div>
+<div class="sub">立ち上げの手順も機能の足し方も決まっているので、悩むところが少ない</div>
 
 <div class="cols">
 <div class="card">

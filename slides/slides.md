@@ -60,7 +60,7 @@ PoCや社内ツールを、すぐ動く形にする
 # アジェンダ
 
 <div class="agenda">
-<Link to="what-is" class="agenda-item"><span class="num">01</span> Nuxtの基本<small>画面とAPIを1つのプロジェクトで書く</small></Link>
+<Link to="what-is" class="agenda-item"><span class="num">01</span> Nuxtの基本<small>画面とAPIを1つのアプリで動かす</small></Link>
 <Link to="fast-start" class="agenda-item" style="--accent: var(--green)"><span class="num">02</span> テンプレートとモジュール<small>1コマンドで始めて、要るものを足す</small></Link>
 <Link to="ai-experiment" class="agenda-item" style="--accent: var(--cyan)"><span class="num">03</span> AIに作らせて比べた<small>NuxtとNext.jsで勤怠管理アプリ</small></Link>
 <Link to="when-to-use" class="agenda-item" style="--accent: var(--orange)"><span class="num">04</span> 向いている場面<small>向く場面と、慎重に考えたい場面</small></Link>
@@ -87,7 +87,7 @@ src: ./pages/04-when-to-use.md
 # 振り返り
 
 <div class="agenda">
-<Link to="what-is-point" class="agenda-item"><span class="num">01</span> Nuxtの基本<small>Vueをベースに、画面とAPIを1つのプロジェクトで書ける</small></Link>
+<Link to="what-is-point" class="agenda-item"><span class="num">01</span> Nuxtの基本<small>Vueをベースに、画面とAPIを1つのアプリで動かせる</small></Link>
 <Link to="fast-start-point" class="agenda-item" style="--accent: var(--green)"><span class="num">02</span> テンプレートとモジュール<small>テンプレートから1コマンドで始まり、要るものはモジュールで足せる</small></Link>
 <Link to="ai-experiment-point" class="agenda-item" style="--accent: var(--cyan)"><span class="num">03</span> AIに作らせて比べた<small>作るときは書く量が少なく、足す手間はほぼ同じだった</small></Link>
 <Link to="when-to-use-point" class="agenda-item" style="--accent: var(--orange)"><span class="num">04</span> 向いている場面<small>PoC、社内ツール、少人数の業務アプリに向いている</small></Link>
@@ -97,7 +97,7 @@ src: ./pages/04-when-to-use.md
 
 # まとめ
 
-<div class="sub">Nuxtは、Webアプリをさっと立ち上げたいときの選択肢になる</div>
+<div class="sub">Nuxtは決まっていることが多く、悩まずにWebアプリを立ち上げられる</div>
 
 <div class="cols">
 <div class="card">
@@ -136,7 +136,7 @@ class: text-center
 
 # まずは1つ、立ち上げてみる
 
-<div class="cta">次のPoCは、<code>npm create nuxt@latest</code>から始めてみてください</div>
+<div class="cta">次にPoCを作るときは、選択肢の1つとして<code>pnpm create nuxt@latest</code>を試してみてください</div>
 
 <div class="pills">
 <a class="pill" href="https://nuxt.com/docs" target="_blank"><lucide-book-open />Nuxtのドキュメント</a>
