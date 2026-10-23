@@ -297,3 +297,15 @@
 .roomy .bar .fill { height: 1.15rem; }
 .roomy .flow .step { font-size: 1.05rem; }
 .roomy .punch { font-size: 1.35rem; }
+
+/* --- Vertical balance (talk-specific): default-layout slides sit centred instead of hugging the top. --- */
+.slidev-layout.default { display: flex; flex-direction: column; justify-content: center; }
+
+/* --- Sub-section divider inside a section (talk-specific):
+       `layout: center` + `class: sub-divider`, kicker + h1 + .sub + the viewpoints as an <ol>. --- */
+.sub-divider { text-align: center; }
+.sub-divider ol { display: inline-block; text-align: left; margin-top: 1.2rem; font-size: 1.1rem; line-height: 1.9; }
+.slidev-layout.default .kicker { align-self: flex-start; }
+
+/* --- Ratio label next to a bar-chart heading (talk-specific): <div class="col-h">指標<span class="ratio">Nuxtは約0.8倍</span></div> --- */
+.col-h .ratio { margin-left: 0.6rem; padding: 0 0.5rem; font-size: 0.75rem; color: var(--background); background: var(--green); border-radius: 999px; }
