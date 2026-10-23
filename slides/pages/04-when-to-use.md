@@ -8,39 +8,52 @@ style: "--accent: var(--orange)"
 
 # 向いている場面
 
-<div class="section-sub">PoCや社内ツールには向いている。向かない場面もある</div>
+<div class="section-sub">PoCや社内ツールに限らず選択肢に入る。慎重に考えたい場面もある</div>
 
 ---
 
-# 私の考え <span class="badge" style="--c: var(--orange)">私見</span>
+# 私の考え：どちらを選んでもいい <span class="badge" style="--c: var(--orange)">私見</span>
 
-<div class="sub">AIがコードを書く今、フレームワークを選ぶ理由が変わってきている</div>
+<div class="sub">NuxtでもNext.jsでも、選んで困ることは少ない</div>
 
-<div class="cols">
+<div class="opinion">
 <div class="card">
-<div class="col-h">速度は決め手になりにくい</div>
+<div class="col-h">① 速度は決め手になりにくい</div>
 
-- 社内ツールの規模なら、フレームワークの差よりAPIやデータ量の差の方が大きい
-- 極端に重くしない限り、体感の差は出にくい
+- 差はReactかVueかより、作り方（画像や外部スクリプト）で出る
+- 端末の性能は上がり続けている
 
 </div>
+<lucide-plus class="arrow" />
 <div class="card">
-<div class="col-h">ReactかVueかに、こだわりすぎなくていい</div>
+<div class="col-h">② 採用も気にしなくていい</div>
 
-- これまでは採用しやすさでReactを選ぶことが多かった
-- AIが書くなら、広く使われているフレームワークで大きくは困らない（直す力は人の側に要る）
+- 利用者はNext.jsが約30倍。それでもNuxtは週に約138万回使われている
+- AIを使う開発者は84%。書き手の数の差は効きにくくなった
 
 </div>
+<lucide-arrow-right class="arrow" />
 <div class="card">
-<div class="col-h">業務アプリなら扱いやすい</div>
+<div class="col-h">③ なら、合う方を選べばいい</div>
 
-- 定番のモジュールがそろい、人がライブラリを選んで確かめる手間が減る
-- 画面の更新の仕組み（リアクティビティ）が素直で、AIのコードも読みやすい
+- どちらも大きなサービスで使われている
+- Nuxtも2025.07からはVercelのもとで、MITのまま開発が続く
 
 </div>
 </div>
 
-<div class="note">出たばかりのOSSを業務で使うのは別の話で、広く使われていることが前提</div>
+<div class="punch">そのうえで私は、Nuxtの「選ばなくていい」ところが好き</div>
+
+<div class="note">Lintの設定やUIライブラリは、作りたいプロダクトの本質ではない。それでも運用と保守を考えると、毎回悩む。Nuxtはそこが決まっていて、悩まずに済む</div>
+
+<div class="source"><lucide-link /><a href="https://www.npmjs.com/package/nuxt" target="_blank">npm：週間ダウンロード（2026.10.12〜18、next 約4,107万・nuxt 約138万）</a>・<a href="https://survey.stackoverflow.co/2025/ai" target="_blank">Stack Overflow Developer Survey 2025</a>・<a href="https://vercel.com/blog/nuxtlabs-joins-vercel" target="_blank">Vercel Blog</a>・<a href="https://nuxt.com/showcase" target="_blank">Nuxt：Showcase</a></div>
+
+<style>
+.opinion { display: flex; align-items: stretch; gap: 0.4rem; }
+.opinion .card { flex: 1; font-size: 0.85rem; }
+.opinion .arrow { align-self: center; flex: none; color: var(--orange); font-size: 1.4rem; }
+.opinion ul { padding-left: 1rem; }
+</style>
 
 ---
 routeAlias: when-to-use-point
@@ -51,7 +64,7 @@ style: "--accent: var(--orange)"
 
 # Nuxtが向いている場面、向かない場面
 
-<div class="sub">画面とAPIを少人数で素早く作るなら、選択肢に入る</div>
+<div class="sub">画面とAPIを素早く作りたいなら、規模を問わず選択肢に入る</div>
 
 <div class="cols">
 <div class="card lit">

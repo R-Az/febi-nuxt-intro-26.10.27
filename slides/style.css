@@ -298,14 +298,26 @@
 .roomy .flow .step { font-size: 1.05rem; }
 .roomy .punch { font-size: 1.35rem; }
 
-/* --- Vertical balance (talk-specific): default-layout slides sit centred instead of hugging the top. --- */
-.slidev-layout.default { display: flex; flex-direction: column; justify-content: center; }
+/* --- Slide frame (talk-specific): the title and subtitle stay at the same height on every slide,
+       the body below them is centred in the remaining space, and the side padding is narrower
+       so the body can use the full width. --- */
+.slidev-layout.default { display: flex; flex-direction: column; padding: 3.4rem 2.5rem 2.8rem; font-size: 1.2rem; }
+.slidev-layout.default > h1 + :not(.sub),
+.slidev-layout.default > h1 + .sub + * { margin-top: auto; }
+.slidev-layout.default::after { content: ''; margin-top: auto; }
+.slidev-layout.default > .kicker { position: absolute; top: 1.1rem; left: 2.5rem; }
+.slidev-layout.default .source { left: 2.5rem; }
 
 /* --- Sub-section divider inside a section (talk-specific):
        `layout: center` + `class: sub-divider`, kicker + h1 + .sub + the viewpoints as an <ol>. --- */
 .sub-divider { text-align: center; }
 .sub-divider ol { display: inline-block; text-align: left; margin-top: 1.2rem; font-size: 1.1rem; line-height: 1.9; }
-.slidev-layout.default .kicker { align-self: flex-start; }
 
 /* --- Ratio label next to a bar-chart heading (talk-specific): <div class="col-h">指標<span class="ratio">Nuxtは約0.8倍</span></div> --- */
 .col-h .ratio { margin-left: 0.6rem; padding: 0 0.5rem; font-size: 0.75rem; color: var(--background); background: var(--green); border-radius: 999px; }
+
+/* --- Japanese line breaks (talk-specific): wrap at phrase boundaries instead of mid-word
+       (Chrome 119+; other browsers fall back to normal wrapping), and avoid a lone last character. --- */
+.slidev-layout { word-break: auto-phrase; text-wrap: pretty; }
+.slidev-layout h1 { text-wrap: balance; }
+.slidev-layout pre { word-break: normal; }

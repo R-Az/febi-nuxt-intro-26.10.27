@@ -100,17 +100,17 @@ src: ./pages/04-when-to-use.md
 <div class="sub">Nuxtは決まっていることが多く、悩まずにWebアプリを立ち上げられる</div>
 
 <div class="summary">
-<div class="card"><lucide-plug class="ic" /><div class="col-h">型がつながる</div>APIは<code>server/api/</code>に置き、型は画面まで自動で付く</div>
-<div class="card"><lucide-folder-tree class="ic" /><div class="col-h">決まっている</div>置き場所、import、UI、機能の足し方</div>
-<div class="card"><lucide-layout-dashboard class="ic" /><div class="col-h">すぐ始まる</div>テンプレートとNuxt UIで管理画面から</div>
-<div class="card"><lucide-bot class="ic" /><div class="col-h">AIでも少なく</div>作るときの出力トークンは約0.8倍、importは約4分の1</div>
+<div class="card"><lucide-code class="ic" /><div class="col-h">書きやすい</div>importを書かなくていい。<br>APIの型も、画面まで<br>自動で付く</div>
+<div class="card"><lucide-folder-tree class="ic" /><div class="col-h">決まっている</div>置き場所、UI、<br>機能の足し方</div>
+<div class="card"><lucide-layout-dashboard class="ic" /><div class="col-h">すぐ始まる</div>テンプレートとNuxt UIで、<br>管理画面から始まる</div>
+<div class="card"><lucide-bot class="ic" /><div class="col-h">AIでも少なく</div>出力トークンは約0.8倍、<br>importは約4分の1</div>
 </div>
 
-<div class="note">PoCや社内ツールに向く。React前提の資産やチームがあるなら、Next.jsも十分よい選択</div>
+<div class="note">NuxtでもNext.jsでも、どちらを選んでもいい。今日のNuxtのいいところが合いそうなら、試してみる価値がある</div>
 
 <style>
 .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin-top: 1.5rem; }
-.summary .card { text-align: center; font-size: 0.85rem; }
+.summary .card { text-align: center; font-size: 0.85rem; line-height: 1.6; }
 .summary .ic { font-size: 2rem; color: var(--purple); margin: 0.3rem auto 0.5rem; display: block; }
 </style>
 
@@ -119,9 +119,9 @@ layout: center
 class: text-center
 ---
 
-# まずは1つ、立ち上げてみる
+# Nuxtが気になったら、ぜひ使ってみてください
 
-<div class="cta">次にPoCを作るときは、選択肢の1つとして<code>pnpm create nuxt@latest</code>を試してみてください</div>
+<div class="cta"><code>pnpm create nuxt@latest</code>の1コマンドから始められます</div>
 
 <div class="pills">
 <a class="pill" href="https://nuxt.com/docs" target="_blank"><lucide-book-open />Nuxtのドキュメント</a>

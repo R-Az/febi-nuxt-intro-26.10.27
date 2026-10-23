@@ -13,7 +13,7 @@ routeAlias: what-is
 
 # こんなことありませんか？
 
-<div class="sub">PoCを来週までに動かしたい。小さなアプリでも、画面・API・ログインは一通り要る</div>
+<div class="scene"><lucide-message-circle /> 「PoCを来週までに動かしたい。小さなアプリでも、画面もAPIもログインも要る」</div>
 
 <div class="cols split-vs">
 <div>
@@ -40,6 +40,7 @@ routeAlias: what-is
 <div v-click class="ask">画面とAPIをまとめて、しかも毎回悩まずに作れないでしょうか？</div>
 
 <style>
+.scene { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; padding: 0.6rem 1rem; background: var(--panel); border-left: 3px solid var(--orange); border-radius: 4px; }
 .split-vs .box-row { display: flex; align-items: center; gap: 0.5rem; margin: 0.6rem 0; }
 .split-vs .box { flex: 1; padding: 0.7rem 0.5rem; text-align: center; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
 .split-vs .box small { display: block; color: var(--comment); font-size: 0.75rem; }
@@ -77,9 +78,13 @@ routeAlias: what-is
 </div>
 </div>
 
-<div v-click class="punch">今回はNuxtを、ReactとNext.jsと比べながら紹介します</div>
+<div v-click>
+
+<div class="punch">今回はNuxtを、ReactとNext.jsと比べながら紹介します</div>
 
 <div class="note">Reactを知らなくても大丈夫です。比べるスライドは、右側（Vue / Nuxt）だけ読めば話が追えます</div>
+
+</div>
 
 <div class="source"><lucide-link /><a href="https://nuxt.com/docs/4.x/guide/concepts/rendering" target="_blank">Nuxt：Rendering Modes</a></div>
 
@@ -137,7 +142,9 @@ defineProps<{ users: User[] }>()
 
 <template>
   <ul>
-    <li v-for="u in users" :key="u.id">{{ u.name }}</li>
+    <li v-for="u in users" :key="u.id">
+      {{ u.name }}
+    </li>
   </ul>
 </template>
 ```
@@ -288,8 +295,7 @@ const { data } = useRecords(month)
 </div>
 </div>
 
-- **対象**：<code>ref</code>などVueの関数、<code>useFetch</code>などNuxtの関数、自作のcomponentsとcomposables
-- **composable**：状態と処理をまとめた関数。Reactのカスタムフックに近く、<code>app/composables/</code>に置く
+- **対象**：Vue・Nuxtの関数、自作のcomponentsとcomposables（Reactのカスタムフックに近い）
 - **出どころ**：エディタの定義ジャンプで追える（型の定義はNuxtが自動で作る）
 
 <div class="source"><lucide-link /><a href="https://nuxt.com/docs/4.x/guide/concepts/auto-imports" target="_blank">Nuxt：Auto-imports</a>・<a href="https://nuxt.com/docs/4.x/directory-structure/app/composables" target="_blank">Nuxt：composables/</a></div>

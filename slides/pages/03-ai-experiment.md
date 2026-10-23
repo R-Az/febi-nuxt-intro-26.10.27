@@ -117,11 +117,9 @@ style: "--accent: var(--cyan)"
 
 | 要件 | Nuxt（2回とも） | Next.js（2回とも） |
 |---|---|---|
-| ログインとセッション | `nuxt-auth-utils`モジュール | 署名付きCookieとパスワードのハッシュ化を自前で実装 |
-| 毎日0時の定期処理 | 組み込みのNitro Tasks | 自前のタイマー（1回目はVercelのcron設定も追加） |
+| ログインとセッション | `nuxt-auth-utils`モジュール | Cookieの署名とハッシュ化を自前で実装 |
+| 毎日0時の定期処理 | 組み込みのNitro Tasks（実験的な機能） | 自前のタイマー（1回目はVercelのcron設定も追加） |
 | 単体テスト | Vitest | Vitest |
-
-<div class="note">Nitro TasksはNuxtのサーバー（Nitro）の機能で、<code>server/tasks/</code>に置いた処理をcron式の時刻に動かす。まだ実験的な機能</div>
 
 <div v-click class="punch">今回の2回では、AIも決まった置き場所と定番のモジュールをそのまま使いました</div>
 
@@ -201,4 +199,5 @@ style: "--accent: var(--cyan)"
 table { font-size: 0.85rem; }
 th, td { padding-top: 0.35rem !important; padding-bottom: 0.35rem !important; }
 .warn { color: var(--yellow); }
+td:nth-child(2), th:nth-child(2) { white-space: nowrap; }
 </style>

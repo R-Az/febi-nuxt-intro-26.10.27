@@ -151,13 +151,21 @@ style: "--accent: var(--green)"
 <div class="card">
 <div class="col-h">始める</div>
 
-<code>pnpm create nuxt@latest my-app -t ui/dashboard</code>で、管理画面のある状態から始まる。部品は公式のNuxt UIがそろえている
+<code>pnpm create nuxt -t ui/dashboard</code>
+
+管理画面のある状態から始まる。<br>部品は公式のNuxt UIがそろえている
 
 </div>
 <div class="card">
 <div class="col-h">足す</div>
 
-<code>pnpm nuxt module add</code>で、どの機能も同じ手順で足せる。書くのはアプリ固有の部分に絞れる
+<code>pnpm nuxt module add &lt;名前&gt;</code>
+
+どの機能も同じ手順で足せる。<br>書くのはアプリ固有の部分に絞れる
 
 </div>
 </div>
+
+<style>
+.card code { white-space: nowrap; font-size: 0.8em; }
+</style>
