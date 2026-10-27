@@ -337,10 +337,10 @@ const { data: users } =
 </div>
 </div>
 
-- **Next.js**：APIを作らずに書ける。外から呼ぶAPIは、Route Handler（<code>route.ts</code>で書くAPI）で作る
-- **Nuxt**：<code>users.ts</code>が<code>/api/users</code>になる。<code>users</code>の型もAPIの戻り値から自動で付く
+- **Next.js**：APIなしで書け、型もそのままつながる
+- **Nuxt**：<code>users.ts</code>が<code>/api/users</code>になる。型も付く（Dateは文字列になる）
 
-<div class="punch">違い：Nuxtは画面とAPIの境目が<code>server/api/</code>で決まり、型も自動でつながる</div>
+<div class="punch">違い：Next.jsはデータを直接読み、NuxtはAPIを<code>server/api/</code>に置いて呼ぶ</div>
 
 <div class="source"><lucide-link /><a href="https://nuxt.com/docs/4.x/directory-structure/server" target="_blank">Nuxt：server/</a>・<a href="https://nuxt.com/docs/4.x/getting-started/data-fetching" target="_blank">Nuxt：Data Fetching</a>・<a href="https://nextjs.org/docs/app/getting-started/fetching-data" target="_blank">Next.js：Fetching Data</a></div>
 

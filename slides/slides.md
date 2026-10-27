@@ -89,7 +89,7 @@ src: ./pages/04-when-to-use.md
 <div class="agenda">
 <Link to="what-is-point" class="agenda-item"><span class="num">01</span> Nuxtの基本<small>Next.jsとの違いは、書き方と置き場所の決まり</small></Link>
 <Link to="fast-start-point" class="agenda-item" style="--accent: var(--green)"><span class="num">02</span> テンプレートとNuxt UI<small>テンプレートで始めて、要るものはモジュールで足す</small></Link>
-<Link to="ai-experiment-point" class="agenda-item" style="--accent: var(--cyan)"><span class="num">03</span> AIに作らせて比べた<small>作るときは書く量が少なく、足す手間はほぼ同じだった</small></Link>
+<Link to="ai-experiment-point" class="agenda-item" style="--accent: var(--cyan)"><span class="num">03</span> AIに作らせて比べた<small>AIも用意された仕組みを使い、認証と定期処理を自前で書かずに済んだ</small></Link>
 <Link to="when-to-use-point" class="agenda-item" style="--accent: var(--orange)"><span class="num">04</span> 向いている場面<small>PoC、社内ツール、少人数の業務アプリに向いている</small></Link>
 </div>
 
@@ -100,10 +100,10 @@ src: ./pages/04-when-to-use.md
 <div class="sub">Nuxtは決まっていることが多く、悩まずにWebアプリを立ち上げられる</div>
 
 <div class="summary">
-<div class="card"><lucide-code class="ic" /><div class="col-h">書きやすい</div>importを書かなくていい。<br>APIの型も、画面まで<br>自動で付く</div>
+<div class="card"><lucide-code class="ic" /><div class="col-h">書きやすい</div>importを書かなくていい。<br>composableも置くだけで使える</div>
 <div class="card"><lucide-folder-tree class="ic" /><div class="col-h">決まっている</div>置き場所、UI、<br>機能の足し方</div>
 <div class="card"><lucide-layout-dashboard class="ic" /><div class="col-h">すぐ始まる</div>テンプレートとNuxt UIで、<br>管理画面から始まる</div>
-<div class="card"><lucide-bot class="ic" /><div class="col-h">AIでも少なく</div>出力トークンは約0.8倍、<br>importは約4分の1</div>
+<div class="card"><lucide-bot class="ic" /><div class="col-h">AIも仕組みを使った</div>認証と定期処理を<br>自前で書かずに済んだ</div>
 </div>
 
 <div class="note">NuxtでもNext.jsでも、どちらを選んでもいい。今日のNuxtのいいところが合いそうなら、試してみる価値がある</div>

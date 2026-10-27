@@ -8,38 +8,36 @@ style: "--accent: var(--cyan)"
 
 # AIに作らせて比べた
 
-<div class="section-sub">同じ指示で、NuxtとNext.jsに勤怠管理アプリを作らせる</div>
+<div class="section-sub">同じ指示で作らせて、AIが何を書かずに済んだかを見る</div>
 
 ---
 
 # 確かめたかったこと
 
-<div class="ask">Nuxtの決まりごととモジュールは、AIに作らせるときにも手間を減らすのか？</div>
+<div class="ask">Nuxtの決まりごととモジュールがあると、AIが書くコードは減るのか？</div>
 
 <div class="cols">
 <div class="card">
 <div class="col-h">予想1</div>
 
-自動インポートと決まりごとの分、出力トークンとコードが少なくなる
+モジュールや組み込みの機能を、<br>AIも使う
 
 </div>
 <div class="card">
 <div class="col-h">予想2</div>
 
-用意された仕組みを使うので、手戻りや追加の依存が少なくなる
+そのぶん、AIが自前で書くコードと<br>importが減る
 
 </div>
 <div class="card">
 <div class="col-h">予想3（反対の予想）</div>
 
-学習データが多い分、Next.jsの方がエラーや介入が少なくなる
+学習データが多い分、Next.jsの方が<br>エラーや介入が少ない
 
 </div>
 </div>
 
-<div class="note">予想は検証の計画に書いておき、結果を見てから答え合わせをする</div>
-
-<div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/blob/master/docs/context/03_experiment-plan.md" target="_blank">GitHub：検証の計画</a></div>
+<div class="note">予想を先に置き、結果を見てから答え合わせをする</div>
 
 ---
 
@@ -58,115 +56,165 @@ style: "--accent: var(--cyan)"
 </div>
 
 - **アプリ**：従業員10〜30人の会社の勤怠管理。打刻、月次一覧、CSV出力、権限、毎日0時の定期処理など
-- **受け入れ条件**：①は12件、②は6件。ライブラリ名は指示文に書かない
 - **条件**：Claude Code（claude-opus-5-5）、毎回新しいセッション。止まったら決まった文面だけ返す
 - **回数**：NuxtとNext.jsで、①と②を2回ずつ（計8回）
+- **指示の制約**：データの読み書きはすべてAPIを通す、とした。そのためNext.jsでは、Server Componentsでの読み込みやServer Actionsは使われていない
 
 <div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/tree/master/experiment" target="_blank">GitHub：検証の手順と指示文（2026.10.19〜20に実施）</a>・<a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/blob/master/results/experiment/conditions.md" target="_blank">実施した条件</a></div>
 
 ---
 
-# ① 作る：Nuxtの方が書く量が少なかった
+# 書かずに済んだもの：毎日0時の定期処理
 
-<div class="sub">各2回の平均（モデルは1種類）。どちらも人の介入なしで、受け入れ条件12件をすべて満たした</div>
+<div class="sub">同じ要件に、Nuxtでは組み込みの機能を使い、Next.jsではタイマーを自前で書いた（1回目のコードの抜粋）</div>
+
+<div class="cols">
+<div class="card">
+<div class="col-h">Next.js：自前のタイマー</div>
+
+```ts
+// instrumentation.ts：起動時にタイマーを登録
+export async function register() {
+  startDailyScheduler()
+}
+
+// server/scheduler.ts（28行）
+const scheduleNext = () => {
+  setTimeout(() => {
+    runDailyMissingCheck()
+    scheduleNext()
+  }, msUntilNextJstMidnight()) // 次の0時を計算
+}
+```
+
+</div>
+<div class="card">
+<div class="col-h">Nuxt：組み込みのNitro Tasks</div>
+
+```ts
+// nuxt.config.ts
+nitro: {
+  experimental: { tasks: true },
+  scheduledTasks: {
+    '0 0 * * *': ['attendance:detect-missing'],
+  },
+},
+
+// server/tasks/attendance/detect-missing.ts
+export default defineTask({
+  meta: { name: 'attendance:detect-missing' },
+  async run() { /* 前日の打刻漏れを検出する */ },
+})
+```
+
+</div>
+</div>
+
+<div class="note">Nitro Tasksは実験的な機能。Next.jsでは、Vercel Cronなど外の仕組みを使うことも多い</div>
+
+<div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/tree/master/experiment" target="_blank">GitHub：experiment/next/run-1、experiment/nuxt/run-1</a>・<a href="https://v2.nitro.build/guide/tasks" target="_blank">Nitro：Tasks</a></div>
+
+---
+
+# 書かずに済んだもの：ログインとセッション
+
+<div class="sub">Nuxtではモジュールの関数を呼び、Next.jsではハッシュ化と署名を自前で書いた（1回目のコードの抜粋）</div>
+
+<div class="cols">
+<div class="card">
+<div class="col-h">Next.js：自前の実装</div>
+
+```ts
+// server/password.ts（17行）
+const hash = scryptSync(password, salt, 32)
+return timingSafeEqual(actual, expected)
+
+// lib/session-token.ts（67行）
+const sig = await subtle.sign('HMAC', key, data)
+return `${body}.${toBase64Url(sig)}`
+```
+
+</div>
+<div class="card">
+<div class="col-h">Nuxt：nuxt-auth-utilsの関数</div>
+
+```ts
+// ハッシュ化と照合
+passwordHash: await hashPassword(password)
+await verifyPassword(user.passwordHash, password)
+
+// 暗号化してCookieに保存する
+await replaceUserSession(event, { user })
+```
+
+</div>
+</div>
+
+- **自前の行数**：Next.jsは認証と定期処理で、約120〜140行を書いた
+- **公平に見ると**：Next.jsにもAuth.jsがある。AIがNuxtではモジュールを選び、Next.jsでは自前で書いた
+
+<div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/tree/master/experiment" target="_blank">GitHub：experiment/next/run-1、experiment/nuxt/run-1</a>・<a href="https://github.com/atinux/nuxt-auth-utils" target="_blank">GitHub：nuxt-auth-utils</a></div>
+
+---
+
+# importとコードの行数（2回分）
+
+<div class="sub">importは2回とも大きく減った。コード全体の行数は、回によって差が出たり出なかったりした</div>
 
 <div class="cols pairs">
 <div>
-<div class="col-h">出力トークン<span class="ratio">Nuxtは約0.8倍</span></div>
+<div class="col-h">importの行数<span class="ratio">Nuxtは約4分の1</span></div>
 <div class="bars">
-<div class="bar"><span class="label">Nuxt</span><span class="fill" style="--w: 78%"></span><span class="n">74,867</span></div>
-<div class="bar"><span class="label">Next.js</span><span class="fill" style="--w: 100%; --c: var(--pink)"></span><span class="n">95,558</span></div>
-</div>
-<div class="col-h">推定コスト（USD）<span class="ratio">Nuxtは約0.65倍</span></div>
-<div class="bars">
-<div class="bar"><span class="label">Nuxt</span><span class="fill" style="--w: 65%"></span><span class="n">3.92</span></div>
-<div class="bar"><span class="label">Next.js</span><span class="fill" style="--w: 100%; --c: var(--pink)"></span><span class="n">5.99</span></div>
+<div class="bar"><span class="label">Nuxt 1回目</span><span class="fill" style="--w: 32%"></span><span class="n">55</span></div>
+<div class="bar"><span class="label">Nuxt 2回目</span><span class="fill" style="--w: 20%"></span><span class="n">35</span></div>
+<div class="bar"><span class="label">Next.js 1回目</span><span class="fill" style="--w: 100%; --c: var(--pink)"></span><span class="n">172</span></div>
+<div class="bar"><span class="label">Next.js 2回目</span><span class="fill" style="--w: 97%; --c: var(--pink)"></span><span class="n">167</span></div>
 </div>
 </div>
 <div>
-<div class="col-h">所要時間（分）<span class="ratio">Nuxtは約0.8倍</span></div>
+<div class="col-h">コード全体の行数</div>
 <div class="bars">
-<div class="bar"><span class="label">Nuxt</span><span class="fill" style="--w: 77%"></span><span class="n">12.5</span></div>
-<div class="bar"><span class="label">Next.js</span><span class="fill" style="--w: 100%; --c: var(--pink)"></span><span class="n">16.3</span></div>
-</div>
-<div class="col-h">importの行数<span class="ratio">Nuxtは約4分の1</span></div>
-<div class="bars">
-<div class="bar"><span class="label">Nuxt</span><span class="fill" style="--w: 26%"></span><span class="n">45</span></div>
-<div class="bar"><span class="label">Next.js</span><span class="fill" style="--w: 100%; --c: var(--pink)"></span><span class="n">170</span></div>
+<div class="bar"><span class="label">Nuxt 1回目</span><span class="fill" style="--w: 86%"></span><span class="n">2,562</span></div>
+<div class="bar"><span class="label">Nuxt 2回目</span><span class="fill" style="--w: 61%"></span><span class="n">1,803</span></div>
+<div class="bar"><span class="label">Next.js 1回目</span><span class="fill" style="--w: 86%; --c: var(--pink)"></span><span class="n">2,556</span></div>
+<div class="bar"><span class="label">Next.js 2回目</span><span class="fill" style="--w: 100%; --c: var(--pink)"></span><span class="n">2,972</span></div>
 </div>
 </div>
 </div>
 
-<div class="note">importの差が特に大きい。自動インポートの分に、認証をモジュールに任せた分が加わった</div>
+- **import**：自動インポートの分と、認証をモジュールに任せた分が効いた
+- **全体**：1回目はほぼ同じ。画面やテストの書き方など、AIの書き方の揺れの方が大きい
 
-<div v-click class="punch">書く量もコストも、Nuxtの方が少なく済みました</div>
-
-<div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/blob/master/results/experiment/summary.md" target="_blank">GitHub：results/experiment/summary.md</a></div>
+<div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/blob/master/results/experiment/summary.md" target="_blank">GitHub：results/experiment/summary.md（clocで数え、ロックファイルは除いた）</a></div>
 
 <style>
-.pairs .col-h { margin-top: 0.6rem; margin-bottom: 0; }
-.pairs .bar { grid-template-columns: 4rem 1fr 3.5rem; font-size: 0.85rem; }
+.pairs .col-h { margin-bottom: 0.2rem; }
+.pairs .bar { grid-template-columns: 6.5rem 1fr 3.5rem; font-size: 0.85rem; }
 .pairs .bar .fill { height: 0.9rem; }
 </style>
 
 ---
 
-# AIも用意された仕組みを選んでいた
+# 補足：AIの手間の数字（2回分）
 
-<div class="sub">同じ要件に、Nuxtはモジュールと組み込みの機能で、Next.jsは自前のコードで応えた</div>
+<div class="sub">AIや検証の設定にも左右されるので、参考として見てほしい</div>
 
-| 要件 | Nuxt（2回とも） | Next.js（2回とも） |
-|---|---|---|
-| ログインとセッション | `nuxt-auth-utils`モジュール | Cookieの署名とハッシュ化を自前で実装 |
-| 毎日0時の定期処理 | 組み込みのNitro Tasks（実験的な機能） | 自前のタイマー（1回目はVercelのcron設定も追加） |
-| 単体テスト | Vitest | Vitest |
+| 段階 | 指標 | Nuxt（1回目 / 2回目） | Next.js（1回目 / 2回目） |
+|---|---|--:|--:|
+| ① 作る | 出力トークン | 76,866 / 72,868 | 91,344 / 99,771 |
+| ① 作る | 推定コスト（USD） | 3.73 / 4.11 | 5.26 / 6.73 |
+| ① 作る | 所要時間（分） | 13.2 / 11.7 | 14.6 / 18.1 |
+| ② 足す | 出力トークン | 69,423 / 63,907 | 73,279 / 65,538 |
+| ② 足す | 推定コスト（USD） | 6.29 / 5.59 | 6.12 / 5.40 |
+| ② 足す | 所要時間（分） | 13.7 / 12.9 | 13.4 / 11.9 |
 
-<div v-click class="punch">今回の2回では、AIも決まった置き場所と定番のモジュールをそのまま使いました</div>
+<div class="note">②は、NuxtがNuxt UIと@nuxt/eslint、Next.jsがMantineと既存のLint設定で足した。手間に差はなかった</div>
 
-<div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/tree/master/experiment" target="_blank">GitHub：作られたアプリのコード（experiment/nuxt、experiment/next）</a>・<a href="https://v2.nitro.build/guide/tasks" target="_blank">Nitro：Tasks</a></div>
-
----
-
-# ② 足す：手間はほぼ同じだった
-
-<div class="sub">UI部品・見た目・Lint・GAを足させた。どちらも①の12件と②の6件、計18件をすべて満たした</div>
-
-<div class="cols pairs">
-<div>
-<div class="col-h">出力トークン<span class="ratio">ほぼ同じ</span></div>
-<div class="bars">
-<div class="bar"><span class="label">Nuxt</span><span class="fill" style="--w: 96%"></span><span class="n">66,665</span></div>
-<div class="bar"><span class="label">Next.js</span><span class="fill" style="--w: 100%; --c: var(--pink)"></span><span class="n">69,409</span></div>
-</div>
-<div class="col-h">推定コスト（USD）<span class="ratio">ほぼ同じ</span></div>
-<div class="bars">
-<div class="bar"><span class="label">Nuxt</span><span class="fill" style="--w: 100%"></span><span class="n">5.94</span></div>
-<div class="bar"><span class="label">Next.js</span><span class="fill" style="--w: 97%; --c: var(--pink)"></span><span class="n">5.76</span></div>
-</div>
-</div>
-<div>
-<div class="col-h">所要時間（分）<span class="ratio">ほぼ同じ</span></div>
-<div class="bars">
-<div class="bar"><span class="label">Nuxt</span><span class="fill" style="--w: 100%"></span><span class="n">13.3</span></div>
-<div class="bar"><span class="label">Next.js</span><span class="fill" style="--w: 95%; --c: var(--pink)"></span><span class="n">12.7</span></div>
-</div>
-<div class="col-h">足したもの</div>
-
-- **Nuxt**：Nuxt UI、@nuxt/eslint
-- **Next.js**：Mantine、既存のLint設定
-
-</div>
-</div>
-
-<div class="note">GAは回によってモジュール、公式パッケージ、自前のコードに分かれた。見た目の設定の行数はNuxt UIが半分以下だったが、これはUIライブラリの差</div>
-
-<div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/blob/master/results/experiment/summary.md" target="_blank">GitHub：results/experiment/summary.md</a></div>
+<div class="source"><lucide-flask-conical /><a href="https://github.com/R-Az/febi-nuxt-intro-26.10.27/blob/master/results/experiment/summary.md" target="_blank">GitHub：results/experiment/summary.md（トークンとコストはccusageで集計）</a></div>
 
 <style>
-.pairs .col-h { margin-top: 0.6rem; margin-bottom: 0; }
-.pairs .bar { grid-template-columns: 4rem 1fr 3.5rem; font-size: 0.85rem; }
-.pairs .bar .fill { height: 0.9rem; }
-.pairs ul { font-size: 0.85rem; margin-top: 0.3rem; }
+table { font-size: 0.85rem; }
+th, td { padding-top: 0.3rem !important; padding-bottom: 0.3rem !important; }
 </style>
 
 ---
@@ -176,21 +224,20 @@ style: "--accent: var(--cyan)"
 
 <div class="kicker">03のまとめ</div>
 
-# 答え合わせ：作るときは手間が減った
+# 答え合わせ：AIも用意された仕組みを使った
 
-<div class="sub">Nuxtの決まりごととモジュールは、AIが作るときにも効いた。ただし後から足す段では差が出なかった</div>
+<div class="sub">Nuxtでは、AIが認証と定期処理を自前で書かずに済んだ。エラーの多さには差がなかった</div>
 
 | 予想 | 結果 | 根拠 |
 |---|---|---|
-| 1：出力とコードが少ない | <span class="ok">当たり</span> | ①で出力トークン約0.8倍、コスト約0.65倍、import約4分の1 |
-| 2：手戻りや依存が少ない | <span class="warn">半分</span> | 認証はモジュール、定期処理は組み込みのNitro Tasksを使った。ビルドと型チェックの失敗、追加の依存は減らなかった |
-| 3：Next.jsの方がエラーが少ない | <span class="ng">外れ</span> | ビルドと型チェックの失敗はNuxt 3回、Next.js 2回で、どちらもAIが自分で直した。人の介入は0回 |
-| （②足す） | ほぼ同じ | トークン・コスト・時間に差はなかった |
+| 1：用意された仕組みを使う | <span class="ok">当たり</span> | 2回とも、認証はnuxt-auth-utils、定期処理はNitro Tasks |
+| 2：自前のコードとimportが減る | <span class="warn">一部当たり</span> | Next.jsは約120〜140行を自前で書いた。importは約4分の1。全体の行数は1回目ほぼ同じ |
+| 3：Next.jsの方がエラーが少ない | <span class="warn">差なし</span> | ビルドと型チェックの失敗はNuxt 3回、Next.js 2回。介入はどちらも0回 |
 
 <div class="notes">
 
 - 各フレームワーク2回、1つのモデルでの結果なので、傾向として読んでほしい
-- AIの学習データの量（Next.jsの方が多い）はそろえられない
+- 指示でAPIを通す形にしたので、Next.jsの強み（Server Components、Server Actions）は比べていない
 - 判定もAI（テストと画面の操作）で、人による確認はしていない
 
 </div>
@@ -198,6 +245,6 @@ style: "--accent: var(--cyan)"
 <style>
 table { font-size: 0.85rem; }
 th, td { padding-top: 0.35rem !important; padding-bottom: 0.35rem !important; }
-.warn { color: var(--yellow); }
 td:nth-child(2), th:nth-child(2) { white-space: nowrap; }
+.warn { color: var(--yellow); }
 </style>
